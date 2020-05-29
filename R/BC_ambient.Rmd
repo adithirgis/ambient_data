@@ -235,19 +235,19 @@ BC<-BC[BC$mean_BC_mm<50,]
 
 ## Correlation plot
 
-```{r  echo=FALSE, message=FALSE, warning=FALSE}
+```{r   message=FALSE, warning=FALSE}
 t<- Correlation(BC$mean_AE33_cstep, BC$mean_BC_mm, BC, lm, 5, 25, 30, "LC_AE51_ILK", "AE33_CSTEP")
 t
 ```
 
 ## t-test
 
-```{r  echo=FALSE, message=FALSE, warning=FALSE}
+```{r   message=FALSE, warning=FALSE}
 t.test(BC$mean_BC_mm,BC$mean_AE33_cstep )
 ```
 
 
-```{r  echo=FALSE, message=FALSE, warning=FALSE}
+```{r  message=FALSE, warning=FALSE}
 names(BC)<-c("hour", "LC_AE51_ILK", "AE33_CSTEP")
 BC_melt<-reshape2::melt(BC, id="hour", measure.vars = c( "LC_AE51_ILK",  "AE33_CSTEP") )
 names(BC_melt)<-c("hour","Instrument", "BC")
