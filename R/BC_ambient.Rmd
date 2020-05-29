@@ -74,9 +74,10 @@ f <- function(x) {
 ```
 
 ## Black Carbon Ambient Measurements at CSTEP and ILK Labs
- The instruments used were: 
- - at CSTEP : AE33 
- - at ILK Labs : AE51 
+
+The instruments used were: 
+- at CSTEP : AE33 
+- at ILK Labs : AE51 
 
 ```{r warning=FALSE, message=FALSE, results=FALSE, include=FALSE}
 setwd("D:/Dropbox/APMfull/ISI - Ambient Readings/Ambient_ILK_Con_2019/Aethalometer")
