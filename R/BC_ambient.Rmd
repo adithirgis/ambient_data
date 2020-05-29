@@ -247,6 +247,7 @@ t
 t.test(BC$mean_BC_mm,BC$mean_AE33_cstep )
 ```
 
+## Box Plot
 
 ```{r  message=FALSE, warning=FALSE}
 names(BC)<-c("hour", "LC_AE51_ILK", "AE33_CSTEP")
