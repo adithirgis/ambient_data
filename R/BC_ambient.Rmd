@@ -225,6 +225,7 @@ setkey(Final1, hour)
 setDT(data_final_BC1)
 setkey(data_final_BC1, hour)
 BC<-merge(data_final_BC1, Final1,by = "hour", all = TRUE)
+BC<-data.frame(BC)
 BC<-completeFun(BC, c("mean_BC_mm"))
 BC<-completeFun(BC, c("mean_AE33_cstep"))
 BC<-BC[BC$mean_BC_mm<50,]
