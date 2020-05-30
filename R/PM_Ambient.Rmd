@@ -1,0 +1,227 @@
+---
+title: "PM 2.5 Ambient"
+author: "Adithi"
+date: "5/30/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(shiny)
+library(DT)
+library(plotly)
+library(lubridate)
+library(data.table)
+library(zoo)
+library(xts)
+library(data.table)
+library(stringr)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(tidyverse)
+library(keyring)
+library(leaflet)
+library(htmltools)
+library(lubridate) # Timestamp maniupulation
+library(raster)
+library(rgdal)
+library(sp)
+library(sf)
+library(scales)
+library(mailR)
+library(blastula)
+library(rsconnect)
+library(caTools)
+library(curl)
+library(devtools)
+library(XML)
+library(purrr)
+library(openair)
+
+############# Wrap Function
+Correlation <- function(y, x, data, lm, a, b, c, x_axi, y_axi) {
+  Mean_y<-round(mean(y, na.rm=TRUE), digits = 1)
+  Mean_x<-round(mean(x, na.rm=TRUE), digits = 1)
+  Median_y<-round(median(y, na.rm=TRUE), digits = 1)
+  Median_x<-round(median(x, na.rm=TRUE), digits = 1)
+  
+  m<-lm(y~x)
+  s<-summary(m)
+  r<-summary(lm(y~x))
+  r$r.squared<-round(r$r.squared, digits=2)
+  n<-nrow(data)
+  data$diffSq<-(y-x)*(y-x)
+  
+  mean_diff_sqr<-mean(data$diffSq, na.rm = TRUE)
+  rmse<-sqrt(mean_diff_sqr)
+  rmse<-round(rmse, digits = 2)
+  
+  p_correlation<-ggplot(data=data,
+                        aes(x=x, y=y))+
+    geom_point(alpha=1,size=2.2)+theme_minimal()+
+    geom_smooth(method=lm, se=FALSE, formula = y~x)+
+    geom_abline(slope=1, intercept=0, color="black", size=0.8, linetype="dashed")+
+    labs(x=x_axi,
+         y= y_axi,
+         title= paste0("R square: ", r$r.squared),
+         subtitle= paste0("Fig: RMSE: ", rmse, "; Mean(Median)-", " Y=", Mean_y,"(",Median_y, ")", "; X=", Mean_x,"(",Median_x, ")", " (ug/m3);"))+ annotate("text", label = reg_eqn(s), x =a, y = b) +theme(legend.text=element_text(size=12),plot.title = element_text(size = 14, face = "bold"),plot.subtitle = element_text(size = 10, face = "bold"), axis.title = element_text(size=18),axis.text = element_text(size = 16, face = "bold"), panel.border = element_rect(colour = "black", fill=NA, size=1.2))+scale_x_continuous(limits=c(0,c))+scale_y_continuous(limits=c(0,c))
+  return(p_correlation)
+}
+f <- function(x) {
+  r <- quantile(x, probs = c(0.05, 0.25, 0.5, 0.75, 0.95))
+  names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
+  r
+}
+reg_eqn<-function(x){
+  R_sq<-round(as.numeric(x$adj.r.squared), digits =2)
+  int<-round(coef(x)[1], digits=2)
+  slope<-round(coef(x)[2], digits=2)
+  eqn<-paste("y=", slope,"x+(",int, ")")
+  return(eqn)}
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+```
+
+## PM 2.5 Ambient Measurements at CSTEP and ILK Labs
+
+The instruments used were: 
+- at CSTEP : BAM 1022
+- at ILK Labs : DustTrak 8530 
+
+
+```{r warning=FALSE, message=FALSE, results=FALSE, include=FALSE}
+setwd("D:/Dropbox/APMfull/ISI - Ambient Readings/Ambient_ILK_Con_2019/DustTrak")
+dir="D:/Dropbox/APMfull/ISI - Ambient Readings/Ambient_ILK_Con_2019/DustTrak"
+lt <- list.files(dir, pattern = "\\.csv$")
+data_final_PM<-data.frame()
+
+for (z in (lt))
+{
+  DT_f<- read.csv(z, header=TRUE, skip = 28, sep=",")
+  y<-data.frame(colnames(DT_f))
+  date_format<-y[1,1]
+  if(date_format=="dd.MM.yyyy")
+  {
+    names(DT_f)<-c("Date", "Time", "PM2.5")
+    DT_f$date <- with(DT_f, as.POSIXct(paste(as.Date(Date, format="%d-%m-%Y"), Time)))
+    DT_f$date <- as.POSIXct(DT_f$date, format='%Y-%m-%d %H:%M:%S', tz="Asia/Kolkata")
+  }else{
+    names(DT_f)<-c("Date", "Time", "PM2.5")
+    DT_f$date <- with(DT_f, as.POSIXct(paste(as.Date(Date, format="%m/%d/%Y"), Time)))
+    DT_f$date <- as.POSIXct(DT_f$date, format='%Y-%m-%d %H:%M:%S', tz="Asia/Kolkata")
+  }
+  DT_f$PM2.5<- as.numeric(as.character(DT_f$PM2.5))
+  DT_f$PM2.5<-DT_f$PM2.5*1000
+  data_final_PM<-rbind(data_final_PM, DT_f)
+}
+data_final_PM<-data.table(data_final_PM)
+setkey(data_final_PM, date)
+data_final_PM$hour<-lubridate::ceiling_date(data_final_PM$date, "hour")
+data_final_PM$PM2.5<-as.numeric(as.character(data_final_PM$PM2.5))
+data_final_PM1<-data_final_PM%>%
+  dplyr::select(hour, PM2.5)%>%
+  group_by(hour)%>%
+  summarise(mean_PM2.5_mm=mean(PM2.5, na.rm = TRUE))
+
+
+bam<- read.csv(paste("D:/Dropbox/APMfull/Colocation CSTEP/CSTEP_co-location_2020/Exp_10_2020_01-13-27/BAM_DT/","DT145243.CSV", sep =""), skip=4)
+bam$Time<- as.POSIXct(bam$Time, format='%d-%m-%Y  %H:%M') 
+attributes(bam$Time)$tzone <- "Asia/Kolkata"
+bam<-dplyr::select(bam, Time, ConcHR.ug.m3.,ConcRT.ug.m3., FRH..., Status)
+names(bam)<-c("date", "BAM","RT_BAM","FRH", "Status")
+df_bam_1hr<-bam
+df_bam_1hr<- setDT(df_bam_1hr)[order(date)]
+df_bam_1hr<- df_bam_1hr[, .(date = date[1], BAM=BAM[1],RT_BAM=RT_BAM[1],FRH=FRH[1], Status=Status[1]) ,                     
+             by = .(Group = floor_date(date, "hour"))] 
+ix <- which(df_bam_1hr$RT_BAM>=1000 | df_bam_1hr$FRH>45 | df_bam_1hr$BAM<0 |df_bam_1hr$RT_BAM< 0 )
+df_bam_1hr<-df_bam_1hr[-c(ix, ix + 1), ]
+df_bam_1hr<- df_bam_1hr[df_bam_1hr$Status== 0,]
+df_bam_1hr<-df_bam_1hr %>%
+  dplyr::select(date, BAM)
+
+df_bam_1hr<-df_bam_1hr[!duplicated(df_bam_1hr$date), ]
+Final<-data.frame(df_bam_1hr)
+Final$month<-format(Final$date, "%m")
+Final$hour<-lubridate::ceiling_date(Final$date, "hour")
+Final1<-Final%>%
+  dplyr::select(hour, BAM)%>%
+  group_by(hour)%>%
+  summarise(mean_BAM_cstep=mean(BAM, na.rm = TRUE))
+setDT(Final1)
+setkey(Final1, hour)
+setDT(data_final_PM1)
+setkey(data_final_PM1, hour)
+PM<-merge(data_final_PM1, Final1,by = "hour", all = TRUE)
+PM<-data.frame(PM)
+PM<-completeFun(PM, c("mean_PM2.5_mm"))
+PM<-completeFun(PM, c("mean_BAM_cstep"))
+# PM<-PM[BC$mean_BC_mm<50,]
+names(PM)<-c("hour", "DT_ILK", "BAM_CSTEP")
+
+```
+
+
+## Days of measurement
+
+- BAM: 2 July 2019
+
+```{r   message=FALSE, warning=FALSE}
+names(Final1)<-c("date", "BAM_CSTEP")
+calendarPlot(Final1, pollutant = "BAM_CSTEP")
+```
+
+- DustTrak: 14 May 2019
+
+```{r   message=FALSE, warning=FALSE}
+names(data_final_PM1)<-c("date", "DT_ILK")
+calendarPlot(data_final_PM1, pollutant = "DT_ILK")
+```
+
+
+## Correlation plot
+
+```{r   message=FALSE, warning=FALSE}
+t<- Correlation(PM$BAM_CSTEP, PM$DT_ILK, PM, lm, 50, 275, 300, "DT_ILK", "BAM_CSTEP")
+t
+```
+
+## t-test
+
+```{r   message=FALSE, warning=FALSE}
+t.test(PM$DT_ILK,PM$BAM_CSTEP )
+```
+
+## Box Plot
+
+- DT_ILK: DustTrak 8530 measurements of PM2.5 placed at ILK Labs for everyday 30 mins before and after the rides.
+
+- BAM_CSTEP: BAM 1022 measurements of PM2.5 placed at CSTEP
+
+```{r  message=FALSE, warning=FALSE}
+names(PM)<-c("hour", "DT_ILK",  "BAM_CSTEP")
+PM_melt<-reshape2::melt(PM, id="hour", measure.vars = c( "DT_ILK",  "BAM_CSTEP") )
+names(PM_melt)<-c("hour","Instrument", "PM")
+p1<-ggplot(PM_melt, aes(Instrument, PM))+ 
+  labs(x="",  y= expression(paste(PM[2.5] ," (", mu, "g",~m^{-3}, ")")),title=paste0(""))+
+  stat_summary(fun.data = f, geom="boxplot", width=0.2, size=1.2)+  
+  stat_summary(fun.y=mean, colour="black", geom="point",size=4)+
+  scale_y_continuous(limits = c(0,200), expand = c(0, 0))+theme_minimal()+
+  theme(legend.text=element_text(size=14),plot.subtitle = element_text(size = 10, face = "bold"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.title = element_text(size=28, face="bold"),axis.text = element_text(size = 28, colour = "black",face = "bold"),
+        panel.border = element_rect(colour = "black", fill=NA, size=1.2),axis.text.x = element_blank() ) + annotate("text", label = "DT_ILK", x ="DT_ILK", y =180, size=6, face="bold")+ annotate("text", label = "BAM_CSTEP", x ="BAM_CSTEP", y =180, size=6, face="bold")
+p1
+
+
+```
+
+## Time Variations
+
+
+```{r   message=FALSE, warning=FALSE}
+names(PM)<-c("date", "DT",  "BAM")
+timeVariation(PM, pollutant=c("DT",  "BAM"))
+
+```
