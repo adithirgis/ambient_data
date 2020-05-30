@@ -94,3 +94,70 @@ timeVariation(PM, pollutant=c("DT",  "BAM"))
 ```
 
 ![](PM_Ambient_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+## Correction of DustTrak 8530 using this equation- y=0.21x+11.1
+
+## Corrected DustTrak Correlation plot
+
+``` r
+names(PM)<-c("date", "DT_ILK",  "BAM_CSTEP")
+PM$DT_ILK<-(PM$DT_ILK*0.21)+11.1
+t<- Correlation(PM$BAM_CSTEP, PM$DT_ILK, PM, lm, 10, 45, 50, "DT_ILK", "BAM_CSTEP")
+t
+```
+
+![](PM_Ambient_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+## t-test
+
+``` r
+t.test(PM$DT_ILK,PM$BAM_CSTEP )
+```
+
+    ## 
+    ##  Welch Two Sample t-test
+    ## 
+    ## data:  PM$DT_ILK and PM$BAM_CSTEP
+    ## t = 5.2747, df = 387.46, p-value = 2.217e-07
+    ## alternative hypothesis: true difference in means is not equal to 0
+    ## 95 percent confidence interval:
+    ##  3.224191 7.056115
+    ## sample estimates:
+    ## mean of x mean of y 
+    ##  26.39297  21.25282
+
+## Box Plot
+
+  - DT\_ILK: Corrected DustTrak 8530 measurements of PM2.5 placed at ILK
+    Labs for everyday 30 mins before and after the rides.
+
+  - BAM\_CSTEP: BAM 1022 measurements of PM2.5 placed at CSTEP
+
+<!-- end list -->
+
+``` r
+names(PM)<-c("hour", "DT_ILK",  "BAM_CSTEP")
+PM_melt<-reshape2::melt(PM, id="hour", measure.vars = c( "DT_ILK",  "BAM_CSTEP") )
+names(PM_melt)<-c("hour","Instrument", "PM")
+p1<-ggplot(PM_melt, aes(Instrument, PM))+ 
+  labs(x="",  y= expression(paste(PM[2.5] ," (", mu, "g",~m^{-3}, ")")),title=paste0(""))+
+  stat_summary(fun.data = f, geom="boxplot", width=0.2, size=1.2)+  
+  stat_summary(fun.y=mean, colour="black", geom="point",size=4)+
+  scale_y_continuous(limits = c(0,50), expand = c(0, 0))+theme_minimal()+
+  theme(legend.text=element_text(size=14),plot.subtitle = element_text(size = 10, face = "bold"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.title = element_text(size=28, face="bold"),axis.text = element_text(size = 28, colour = "black",face = "bold"),
+        panel.border = element_rect(colour = "black", fill=NA, size=1.2),axis.text.x = element_blank() ) + annotate("text", label = "DT_ILK", x ="DT_ILK", y =45, size=6, face="bold")+ annotate("text", label = "BAM_CSTEP", x ="BAM_CSTEP", y =45, size=6, face="bold")
+p1
+```
+
+![](PM_Ambient_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+## Time Variations
+
+``` r
+names(PM)<-c("date", "DT",  "BAM")
+timeVariation(PM, pollutant=c("DT",  "BAM"))
+```
+
+![](PM_Ambient_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
