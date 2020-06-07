@@ -156,7 +156,7 @@ for (fil in (shp_list1)) {
   FinalAll<-site1_join_f1%>%
     group_by(day)%>%
     mutate_all(funs(mean, sd), na.rm = TRUE)
-  
+  fil<-gsub(".xlsx","",fil)
   for(i in names(name)){
     data_list1<-FinalAll %>% dplyr:: select(date, day, starts_with(i))
     mean<-paste0(i,"_mean")
@@ -179,15 +179,22 @@ for (fil in (shp_list1)) {
     old_no<-paste0(i, "_no_hour")
     names(data_list1)[names(data_list1) ==old_no ] <- 'no_hour'
     data_list1 <- subset(data_list1, no_hour >=18)
-    data_list1$no_hour<-NULL
+    if (dim(data_list1)[1] == 0)
+    {
+      data_list1$no_hour<-NULL
+    }else{
+      grap<-calendarPlot(data_list1, i)
+      png(filename=paste0(fil,"_",i,"_plot.jpg"))
+      plot(grap)
+      dev.off()
+      data_list1$no_hour<-NULL
+      }
     data_list1$day<-NULL
     setDT(data_list1)
     setkey(data_list1, date)
     tseries_df<-left_join(tseries_df, data_list1, by="date")
-  }
+    }
   CPCB_hour<-tseries_df
-  fil<-gsub(".xlsx","",fil)
-  name_f<-paste0(fil, "_hourly.csv")
   rem_sd<-grep("_sd", colnames(CPCB_hour))
   CPCB_hour<-CPCB_hour[,-rem_sd]
   rem_mean<-grep("mean", colnames(CPCB_hour))
@@ -199,6 +206,8 @@ for (fil in (shp_list1)) {
   Final_day_1<-CPCB_hour%>%
     group_by(day)%>%
     mutate_all(funs(mean, sd, median, IQR), na.rm = TRUE)
+  name_f<-paste0(fil, "_hourly.csv")
+  write.csv(Final_day_1, name_f )
   Final_day_1$date_mean<-NULL
   Final_day_1$date_sd<-NULL
   Final_day_1$date_IQR<-NULL
@@ -212,8 +221,9 @@ for (fil in (shp_list1)) {
   Final_day_2$date_sd<-NULL
   Final_day_2$date_IQR<-NULL
   Final_day_2$date_median<-NULL
+  name_f<-paste0(fil, "_daily.csv")
+  write.csv(Final_day_2, name_f )
   df_Place3 = data.frame(lapply(Final_day_2, as.character), stringsAsFactors=FALSE)
-  # write.csv(df_Place3, name_f )
   CPCB_hour$date<-NULL
   Final_day<-CPCB_hour%>%
     group_by(day)%>%
@@ -263,6 +273,8 @@ for (fil in (shp_list1)) {
   FinalAll_month1$day_sd<-NULL
   FinalAll_month1$day_IQR<-NULL
   FinalAll_month1$day_median<-NULL
+  name_f<-paste0(fil, "_monthly.csv")
+  write.csv(FinalAll_month1, name_f )
   # CPCB_daily<-rbind(CPCB_daily,FinalAll_daily)
   # write.csv(FinalAll_daily, "Peenya_daily_2018.csv")
 }
