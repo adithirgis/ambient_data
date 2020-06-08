@@ -25,7 +25,7 @@ eg: Karnataka->Bengaluru->Bapuji Nagar
 
 ### CPCB data cleaning process
 
-1.	Uses one-hour datasets, xlsx format.
+1.	Uses one-hour datasets (xlsx format, no restriction on number of parameters downloaded).
 2.	Arranges all the one-hour data without any gaps, missing values impute with 'NaN'
 3.	Deletes all negatives
 4.	For PM<sub>2.5</sub>  and PM<sub>10</sub>  - deletes values greater than or equal to 985

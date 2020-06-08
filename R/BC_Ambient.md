@@ -3,19 +3,19 @@ BC Ambient
 Adithi
 5/29/2020
 
-## Black Carbon Ambient Measurements at CSTEP and ILK Labs
+## Black Carbon (BC) Ambient Measurements at CSTEP and ILK Labs
 
-The instruments used were:
+The instruments used:
 
-  - at CSTEP : AE33
+  - at CSTEP : AE33 (24 hours)
 
-  - at ILK Labs : AE51
+  - at ILK Labs : AE51 (30 mins before and after the ride)
 
-## Days of measurement
+## Days of measurement- Start Date
 
   - AE33: 11 July 2019
 
-<!-- end list -->
+*24 hour average*
 
 ``` r
 names(Final1)<-c("date", "AE33_CSTEP")
@@ -26,7 +26,7 @@ calendarPlot(Final1, pollutant = "AE33_CSTEP")
 
   - AE51: 14 May 2019
 
-<!-- end list -->
+*Average of ambient hour.*
 
 ``` r
 names(data_final_BC1)<-c("date", "LC_AE51_ILK")
@@ -36,6 +36,16 @@ calendarPlot(data_final_BC1, pollutant = "LC_AE51_ILK")
 ![](BC_Ambient_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ## Correlation plot
+
+From here on, the data for both AE33 and AE51 were filtered where both
+the data were present ie: starting from July 11 2019 to 19 February
+2020. The hours of AE51 were matched with corresponding hours of AE33.
+
+  - LC\_AE51\_ILK: Loading corrected AE51 measurements of BC
+
+  - AE33\_CSTEP: AE33 measurements of BC
+
+<!-- end list -->
 
 ``` r
 t<- Correlation(BC$AE33_CSTEP, BC$LC_AE51_ILK, BC, lm, 5, 25, 30, "LC_AE51_ILK", "AE33_CSTEP")
@@ -64,13 +74,6 @@ t.test(BC$LC_AE51_ILK,BC$AE33_CSTEP )
 
 ## Box Plot
 
-  - LC\_AE51\_ILK: Loading corrected AE51 measurements of Black Carbon
-    placed at ILK Labs for everyday 30 mins before and after the rides.
-
-  - AE33\_CSTEP: AE33 measurements of Balck Carbon placed at CSTEP
-
-<!-- end list -->
-
 ``` r
 BC_melt<-reshape2::melt(BC, id="hour", measure.vars = c( "LC_AE51_ILK",  "AE33_CSTEP") )
 names(BC_melt)<-c("hour","Instrument", "BC")
@@ -90,9 +93,55 @@ p1
 
 ## Time Variations
 
+  - LC\_AE51: Loading corrected AE51 measurements of BC
+
+  - AE33: AE33 measurements of BC
+
+<!-- end list -->
+
+1.  For the weekday and hours
+
+<!-- end list -->
+
 ``` r
 names(BC)<-c("date", "LC_AE51", "AE33")
-timeVariation(BC, pollutant=c("AE33", "LC_AE51"))
+BC_timeVari<-timeVariation(BC, pollutant=c("AE33", "LC_AE51"))
 ```
 
 ![](BC_Ambient_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+plot(BC_timeVari, subset = "day.hour") 
+```
+
+![](BC_Ambient_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+
+2.  For the diurnal plot
+
+<!-- end list -->
+
+``` r
+plot(BC_timeVari, subset="hour") 
+```
+
+![](BC_Ambient_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+3.  For the weekday plot
+
+<!-- end list -->
+
+``` r
+plot(BC_timeVari, subset="day") 
+```
+
+![](BC_Ambient_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+4.  For the monthly plot
+
+<!-- end list -->
+
+``` r
+plot(BC_timeVari, subset="month") 
+```
+
+![](BC_Ambient_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->

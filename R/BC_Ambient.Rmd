@@ -84,13 +84,13 @@ completeFun <- function(data, desiredCols) {
 }
 ```
 
-## Black Carbon Ambient Measurements at CSTEP and ILK Labs
+## Black Carbon (BC) Ambient Measurements at CSTEP and ILK Labs
 
-The instruments used were: 
+The instruments used: 
   
-- at CSTEP : AE33 
+- at CSTEP : AE33 (24 hours)
 
-- at ILK Labs : AE51 
+- at ILK Labs : AE51 (30 mins before and after the ride)
 
 ```{r warning=FALSE, message=FALSE, results=FALSE, include=FALSE}
 setwd("D:/Dropbox/APMfull/ISI - Ambient Readings/Ambient_ILK_Con_2019/Aethalometer")
@@ -237,9 +237,11 @@ names(BC)<-c("hour", "LC_AE51_ILK", "AE33_CSTEP")
 
 ```
 
-## Days of measurement
+## Days of measurement- Start Date
 
 - AE33: 11 July 2019
+
+_24 hour average_
 
 ```{r   message=FALSE, warning=FALSE}
 names(Final1)<-c("date", "AE33_CSTEP")
@@ -248,6 +250,8 @@ calendarPlot(Final1, pollutant = "AE33_CSTEP")
 
 - AE51: 14 May 2019
 
+_Average of ambient hour._
+
 ```{r   message=FALSE, warning=FALSE}
 names(data_final_BC1)<-c("date", "LC_AE51_ILK")
 calendarPlot(data_final_BC1, pollutant = "LC_AE51_ILK")
@@ -255,6 +259,12 @@ calendarPlot(data_final_BC1, pollutant = "LC_AE51_ILK")
 
 
 ## Correlation plot
+
+From here on, the data for both AE33 and AE51 were filtered where both the data were present ie: starting from July 11 2019 to 19 February 2020. The hours of AE51 were matched with corresponding hours of AE33.
+
+- LC_AE51_ILK: Loading corrected AE51 measurements of BC
+
+- AE33_CSTEP: AE33 measurements of BC
 
 ```{r   message=FALSE, warning=FALSE}
 t<- Correlation(BC$AE33_CSTEP, BC$LC_AE51_ILK, BC, lm, 5, 25, 30, "LC_AE51_ILK", "AE33_CSTEP")
@@ -269,9 +279,6 @@ t.test(BC$LC_AE51_ILK,BC$AE33_CSTEP )
 
 ## Box Plot
 
-- LC_AE51_ILK: Loading corrected AE51 measurements of Black Carbon placed at ILK Labs for everyday 30 mins before and after the rides.
-
-- AE33_CSTEP: AE33 measurements of Balck Carbon placed at CSTEP
 
 ```{r  message=FALSE, warning=FALSE}
 BC_melt<-reshape2::melt(BC, id="hour", measure.vars = c( "LC_AE51_ILK",  "AE33_CSTEP") )
@@ -292,9 +299,35 @@ p1
 
 ## Time Variations
 
+- LC_AE51: Loading corrected AE51 measurements of BC
+
+- AE33: AE33 measurements of BC
+
+
+1. For the weekday and hours  
+
+```{r   message=FALSE, warning=FALSE, results=FALSE}
+names(BC)<-c("date", "LC_AE51", "AE33")
+BC_timeVari<-timeVariation(BC, pollutant=c("AE33", "LC_AE51"))
+plot(BC_timeVari, subset = "day.hour") 
+```
+
+
+2. For the diurnal plot
 
 ```{r   message=FALSE, warning=FALSE}
-names(BC)<-c("date", "LC_AE51", "AE33")
-timeVariation(BC, pollutant=c("AE33", "LC_AE51"))
+plot(BC_timeVari, subset="hour") 
+```
+
+3. For the weekday plot
+
+```{r   message=FALSE, warning=FALSE}
+plot(BC_timeVari, subset="day") 
+```
+
+4. For the monthly plot
+
+```{r   message=FALSE, warning=FALSE}
+plot(BC_timeVari, subset="month") 
 
 ```
