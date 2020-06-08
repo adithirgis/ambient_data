@@ -30,6 +30,7 @@ eg: Karnataka->Bengaluru->Bapuji Nagar
 3.	Deletes all negatives
 4.	For PM<sub>2.5</sub>  and PM<sub>10</sub>  - deletes values greater than or equal to 985
 5.	If PM<sub>10</sub>  is available, deletes both PM<sub>2.5</sub>  and PM<sub>10</sub>  only when PM<sub>2.5</sub>  exceeds PM<sub>10</sub> 
+7. If both PM<sub>2.5</sub> and PM<sub>10</sub> is available then calculates the ratio and names the column as `ratio`.
 6.	If two consecutive values are the same, removes both of them
 7.	On daily basis (24 data points), calculates the mean and SD, removes individual hourly values which don't fall in the interval [mean-3xSD  mean+3xSD]
 8.	On the cleaned hourly dataset, if at least 75% (18 one-hour data points) of the data in a day is available, then computes the daily mean, SD, median and IQR

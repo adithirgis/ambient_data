@@ -265,6 +265,12 @@
       setDT(tseries_df)
       setkey(tseries_df, date)
       CPCB_hour1<-left_join(tseries_df, CPCB_hour1, by="date")
+      if("PM2.5" %in% colnames(CPCB_hour1) & "PM10" %in% colnames(CPCB_hour1) )
+      {
+          CPCB_hour1$ratio<-CPCB_hour1$PM2.5/CPCB_hour1$PM10
+      }else{
+        CPCB_hour1$ratio<-NA
+      }
       name_f<-paste0(fil, "_hourly.csv")
       write.csv(CPCB_hour1, name_f )
       # df_Place2 = data.frame(lapply(Final_day_1, as.character), stringsAsFactors=FALSE)
@@ -275,6 +281,9 @@
       Final_day_2$date_sd<-NULL
       Final_day_2$date_IQR<-NULL
       Final_day_2$date_median<-NULL
+      Final_day_2$ratio_sd<-NULL
+      Final_day_2$ratio_IQR<-NULL
+      Final_day_2$ratio_median<-NULL
       day<-seq(
         from=as.Date(x1,format='%Y-%m-%d', tz="Asia/Kolkata"),
         to=as.Date(x2, format='%Y-%m-%d', tz="Asia/Kolkata"),
