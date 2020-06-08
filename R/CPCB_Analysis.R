@@ -180,7 +180,7 @@ for (fol in (sub_dir)) {
     columns.of.interest <-2:ncol( site1_join_f1 )
     site1_join_f1[ , columns.of.interest ] <- sapply( X = site1_join_f1[ , columns.of.interest ] , FUN = function(x) as.numeric(as.character(x)))
     site1_join_f1$day<-lubridate::floor_date(site1_join_f1$date, "day")
-    site1_join_f1$month<-format(site1_join_f1$date, "%m")
+    # site1_join_f1$month<-format(site1_join_f1$date, "%m")
     name<-site1_join_f1
     name$day<-NULL
     name$month<-NULL
@@ -192,9 +192,18 @@ for (fol in (sub_dir)) {
       mutate_all(funs(mean, sd), na.rm = TRUE)
     fil<-gsub(".xlsx","",fil)
     for(i in names(name)){
-      data_list1<-FinalAll %>% dplyr:: select(date, day, contains(i))
-      mean<-paste0(i,"_mean")
-      sd<-paste0(i,"_sd")
+      data_list1<-FinalAll %>% dplyr:: select(date, day, starts_with(i))
+      if(i=="NO"){
+        rem_no2<-grep("NO2", colnames(data_list1))
+        data_list1<-data_list1[,-rem_no2] 
+        rem_nox<-grep("NOx", colnames(data_list1))
+        data_list1<-data_list1[,-rem_nox] 
+        mean<-paste0(i,"_mean")
+        sd<-paste0(i,"_sd")
+      }else{
+        mean<-paste0(i,"_mean")
+        sd<-paste0(i,"_sd")
+      }
       data_list1<-completeFun(data_list1, c(i, mean, sd))
       x<-data_list1[[i]]
       y<-grep("_mean", colnames(data_list1))
@@ -276,6 +285,16 @@ for (fol in (sub_dir)) {
     setkey(tseries_df1, day)
     for(i in names(name)){
       data_list1<-Final_day %>% dplyr:: select(day, month,starts_with(i))
+      if(i=="NO"){
+        rem_no2<-grep("NO2", colnames(data_list1))
+        data_list1<-data_list1[,-rem_no2] 
+        rem_nox<-grep("NOx", colnames(data_list1))
+        data_list1<-data_list1[,-rem_nox] 
+        mean<-paste0(i,"_mean")
+        
+      }else{
+        mean<-paste0(i,"_mean")
+      }
       data_list1<-data_list1%>% 
         group_by(month) %>%
         mutate_at(vars(contains(i)),list(no_day = ~ sum(!is.na(.))))
