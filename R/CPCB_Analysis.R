@@ -93,9 +93,14 @@ for (fol in (sub_dir)) {
       Ben<-tseries_df
       print("empty data.frame after one row")
     }else{
+      names(Ben) <- as.matrix(Ben[1, ])
       Ben<- Ben[-1, ]
+      Ben[] <- lapply(Ben, function(x) type.convert(as.character(x)))
+      Ben$date<-Ben$`To Date`
+      Ben$`To Date`<-NULL
       Ben$date <- as.POSIXct(Ben$date, format='%d-%m-%Y %H:%M:%S')
       attributes(Ben$date)$tzone <- "Asia/Kolkata"
+      Ben <- Filter(function(x)!all(is.na(x)), Ben)
       rownames(Ben) <- NULL
     }
     setDT(Ben)
@@ -106,16 +111,41 @@ for (fol in (sub_dir)) {
       Beny<-tseries_df
       print("empty data.frame after one row Beny as well")
     }else{
+      names(Beny) <- as.matrix(Beny[1, ])
       Beny<- Beny[-1, ]
+      Beny[] <- lapply(Beny, function(x) type.convert(as.character(x)))
+      Beny$date<-Beny$`To Date`
+      Beny$`To Date`<-NULL
       Beny$date <- as.POSIXct(Beny$date, format='%d-%m-%Y %H:%M:%S')
       attributes(Beny$date)$tzone <- "Asia/Kolkata"
+      Beny<- Filter(function(x)!all(is.na(x)), Beny)
       rownames(Beny) <- NULL
     }
     setDT(Beny)
     setkey(Beny, date)
     site1_join<-left_join(site1_join, Ben, by="date")
     site1_join<-left_join(site1_join, Beny, by="date")
-    
+    Bent<-data.frame(dt_s$`6`)
+    if(!nrow(Bent))
+    {
+      Bent<-tseries_df
+      print("empty data.frame after one row three rows")
+    }else{
+      names(Bent) <- as.matrix(Bent[1, ])
+      Bent<- Bent[-1, ]
+      Bent[] <- lapply(Bent, function(x) type.convert(as.character(x)))
+      Bent$date<-Bent$`To Date`
+      Bent$`To Date`<-NULL
+      Bent$date <- as.POSIXct(Bent$date, format='%d-%m-%Y %H:%M:%S')
+      attributes(Bent$date)$tzone <- "Asia/Kolkata"
+      Bent<- Filter(function(x)!all(is.na(x)), Bent)
+      rownames(Bent) <- NULL
+    }
+    setDT(Bent)
+    setkey(Bent, date)
+    setDT(site1_join)
+    setkey(site1_join, date)
+    site1_join<-left_join(site1_join, Bent, by="date")
     col_number<-which( colnames(site1_join)=="date" )
     columns.of.interest <- 2:ncol( site1_join )
     
@@ -162,7 +192,7 @@ for (fol in (sub_dir)) {
       mutate_all(funs(mean, sd), na.rm = TRUE)
     fil<-gsub(".xlsx","",fil)
     for(i in names(name)){
-      data_list1<-FinalAll %>% dplyr:: select(date, day, starts_with(i))
+      data_list1<-FinalAll %>% dplyr:: select(date, day, contains(i))
       mean<-paste0(i,"_mean")
       sd<-paste0(i,"_sd")
       data_list1<-completeFun(data_list1, c(i, mean, sd))
