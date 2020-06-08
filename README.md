@@ -3,8 +3,8 @@
 
 Ambient data analysis- ILK Labs
 
-1. BC ambient data Analysis with AE33 and AE51
-2. PM<sub>2.5</sub> ambient data analysis using BAM and DUstTrak II
+1. BC ambient data Analysis with AE33 and AE51 (inside R folder!)
+2. PM<sub>2.5</sub> ambient data analysis using BAM and DUstTrak II (inside R folder!)
 3. CPCB data analysis
 
 ### Note
