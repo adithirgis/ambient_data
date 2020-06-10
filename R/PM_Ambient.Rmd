@@ -1,5 +1,5 @@
 ---
-title: "PM 2.5 Ambient"
+title: "PM2.5 Ambient"
 author: "Adithi"
 date: "5/30/2020"
 output: github_document
@@ -84,11 +84,13 @@ completeFun <- function(data, desiredCols) {
 }
 ```
 
-## PM 2.5 Ambient Measurements at CSTEP and ILK Labs
+## PM<sub>2.5</sub> Ambient Measurements at CSTEP and ILK Labs
 
 The instruments used were: 
-- at CSTEP : BAM 1022
-- at ILK Labs : DustTrak 8530 
+
+- at ILK Labs : DustTrak 8530 (30 mins before and after the ride)
+
+- at CSTEP : BAM 1022 (24 hours)
 
 
 ```{r warning=FALSE, message=FALSE, results=FALSE, include=FALSE}
@@ -162,75 +164,41 @@ names(PM)<-c("hour", "DT_ILK", "BAM_CSTEP")
 
 ```
 
+## Days of measurement- Start Date
 
-## Days of measurement
-
-- BAM: 2 July 2019
-
-```{r   message=FALSE, warning=FALSE}
-names(Final1)<-c("date", "BAM_CSTEP")
-calendarPlot(Final1, pollutant = "BAM_CSTEP")
-```
 
 - DustTrak: 14 May 2019
+
+_Average of ambient hour._
 
 ```{r   message=FALSE, warning=FALSE}
 names(data_final_PM1)<-c("date", "DT_ILK")
 calendarPlot(data_final_PM1, pollutant = "DT_ILK")
 ```
 
+- BAM: 2 July 2019
 
-## Correlation plot
-
-```{r   message=FALSE, warning=FALSE}
-t<- Correlation(PM$BAM_CSTEP, PM$DT_ILK, PM, lm, 50, 275, 300, "DT_ILK", "BAM_CSTEP")
-t
-```
-
-## t-test
+_24 hour average_
 
 ```{r   message=FALSE, warning=FALSE}
-t.test(PM$DT_ILK,PM$BAM_CSTEP )
+names(Final1)<-c("date", "BAM_CSTEP")
+calendarPlot(Final1, pollutant = "BAM_CSTEP")
 ```
-
-## Box Plot
-
-- DT_ILK: DustTrak 8530 measurements of PM2.5 placed at ILK Labs for everyday 30 mins before and after the rides.
-
-- BAM_CSTEP: BAM 1022 measurements of PM2.5 placed at CSTEP
-
-```{r  message=FALSE, warning=FALSE}
-names(PM)<-c("hour", "DT_ILK",  "BAM_CSTEP")
-PM_melt<-reshape2::melt(PM, id="hour", measure.vars = c( "DT_ILK",  "BAM_CSTEP") )
-names(PM_melt)<-c("hour","Instrument", "PM")
-p1<-ggplot(PM_melt, aes(Instrument, PM))+ 
-  labs(x="",  y= expression(paste(PM[2.5] ," (", mu, "g",~m^{-3}, ")")),title=paste0(""))+
-  stat_summary(fun.data = f, geom="boxplot", width=0.2, size=1.2)+  
-  stat_summary(fun.y=mean, colour="black", geom="point",size=4)+
-  scale_y_continuous(limits = c(0,200), expand = c(0, 0))+theme_minimal()+
-  theme(legend.text=element_text(size=14),plot.subtitle = element_text(size = 10, face = "bold"),
-        plot.title = element_text(size = 12, face = "bold"), 
-        axis.title = element_text(size=28, face="bold"),axis.text = element_text(size = 28, colour = "black",face = "bold"),
-        panel.border = element_rect(colour = "black", fill=NA, size=1.2),axis.text.x = element_blank() ) + annotate("text", label = "DT_ILK", x ="DT_ILK", y =180, size=6, face="bold")+ annotate("text", label = "BAM_CSTEP", x ="BAM_CSTEP", y =180, size=6, face="bold")
-p1
-
-
-```
-
-## Time Variations
-
-
-```{r   message=FALSE, warning=FALSE}
-names(PM)<-c("date", "DT",  "BAM")
-timeVariation(PM, pollutant=c("DT",  "BAM"))
-
-```
-
-
 
 ## Correction of DustTrak 8530 using this equation- y=0.21x+11.1
 
-## Corrected DustTrak Correlation plot
+| ![\Uncorrected{fig: `DT8530_PM2.5`}](D:/Dropbox/ILKConsultancy/ambient_data/Image3.JPG) | 
+|:--:| 
+| *BAM Correction equation* |
+
+
+## Correlation plot
+
+From here on, the data for both BAM 1022 and DustTrak 8530 were filtered where both the data were present ie: starting from 02 July 2019 to 06 February 2020. The hours of DustTrak 8530 were matched with corresponding hours of BAM 1022
+
+- DT_ILK: BAM corrected DustTrak 8530 measurements of PM<sub>2.5</sub> placed at ILK Labs for everyday 30 mins before and after the rides.
+
+- BAM_CSTEP: BAM 1022 measurements of PM<sub>2.5</sub> placed at CSTEP
 
 ```{r   message=FALSE, warning=FALSE}
 names(PM)<-c("date", "DT_ILK",  "BAM_CSTEP")
@@ -247,9 +215,7 @@ t.test(PM$DT_ILK,PM$BAM_CSTEP )
 
 ## Box Plot
 
-- DT_ILK: Corrected DustTrak 8530 measurements of PM2.5 placed at ILK Labs for everyday 30 mins before and after the rides.
 
-- BAM_CSTEP: BAM 1022 measurements of PM2.5 placed at CSTEP
 
 ```{r  message=FALSE, warning=FALSE}
 names(PM)<-c("hour", "DT_ILK",  "BAM_CSTEP")
@@ -272,8 +238,36 @@ p1
 ## Time Variations
 
 
+- DT: BAM Corrected DstTrak 8530 measurements of PM<sub>2.5</sub>
+
+- BAM: BAM 1022 measurements of PM<sub>2.5</sub>
+
+
+1. For the weekday and hours  
+
 ```{r   message=FALSE, warning=FALSE}
 names(PM)<-c("date", "DT",  "BAM")
-timeVariation(PM, pollutant=c("DT",  "BAM"))
+PM_timeVari<-timeVariation(PM, pollutant=c("DT",  "BAM"))
+plot(PM_timeVari, subset = "day.hour") 
+```
+
+
+
+2. For the diurnal plot
+
+```{r   message=FALSE, warning=FALSE}
+plot(PM_timeVari, subset="hour") 
+```
+
+3. For the weekday plot
+
+```{r   message=FALSE, warning=FALSE}
+plot(PM_timeVari, subset="day") 
+```
+
+4. For the monthly plot
+
+```{r   message=FALSE, warning=FALSE}
+plot(PM_timeVari, subset="month") 
 
 ```
