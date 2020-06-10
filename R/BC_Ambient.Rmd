@@ -87,10 +87,10 @@ completeFun <- function(data, desiredCols) {
 ## Black Carbon (BC) Ambient Measurements at CSTEP and ILK Labs
 
 The instruments used: 
-  
-- at CSTEP : AE33 (24 hours)
 
-- at ILK Labs : AE51 (30 mins before and after the ride)
+- at ILK Labs : Loading Corrected AE51 (30 mins before and after the ride)
+
+- at CSTEP : AE33 (24 hours)
 
 ```{r warning=FALSE, message=FALSE, results=FALSE, include=FALSE}
 setwd("D:/Dropbox/APMfull/ISI - Ambient Readings/Ambient_ILK_Con_2019/Aethalometer")
@@ -239,6 +239,15 @@ names(BC)<-c("hour", "LC_AE51_ILK", "AE33_CSTEP")
 
 ## Days of measurement- Start Date
 
+- AE51: 14 May 2019
+
+_Average of ambient hour_
+
+```{r   message=FALSE, warning=FALSE}
+names(data_final_BC1)<-c("date", "LC_AE51_ILK")
+calendarPlot(data_final_BC1, pollutant = "LC_AE51_ILK")
+```
+
 - AE33: 11 July 2019
 
 _24 hour average_
@@ -247,16 +256,6 @@ _24 hour average_
 names(Final1)<-c("date", "AE33_CSTEP")
 calendarPlot(Final1, pollutant = "AE33_CSTEP")
 ```
-
-- AE51: 14 May 2019
-
-_Average of ambient hour._
-
-```{r   message=FALSE, warning=FALSE}
-names(data_final_BC1)<-c("date", "LC_AE51_ILK")
-calendarPlot(data_final_BC1, pollutant = "LC_AE51_ILK")
-```
-
 
 ## Correlation plot
 
