@@ -37,7 +37,8 @@ calendarPlot(CPCB_hebbal, pollutant = "CPCB_HB")
 
 ## Correction of DustTrak 8530 using this equation- y=0.21x+11.1
 
-![](D:/Dropbox/ILKConsultancy/ambient_data/Image3.JPG) | |:–:|  
+|![](PM_Ambient_CPCB_files/figure-gfm/Image3.JPG) |
+|:–:|  
 *BAM Correction equation* |
 
 ## Correlation plot
