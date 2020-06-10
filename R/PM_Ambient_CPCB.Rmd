@@ -3,6 +3,7 @@ title: "DustTrak and CPCB Analysis"
 author: "Adithi"
 date: "6/10/2020"
 output: github_document
+
 ---
 
 ```{r setup, include=FALSE}
@@ -170,8 +171,7 @@ calendarPlot(CPCB_hebbal, pollutant = "CPCB_HB")
 
 ## Correction of DustTrak 8530 using this equation- y=0.21x+11.1
 
-| ![\Uncorrected{fig: `DT8530_PM2.5`}](D:/Dropbox/ILKConsultancy/ambient_data/Image3.JPG) | 
-|:--:| 
+| ![\Uncorrected{fig: `DT8530_PM2.5`}](D:/Dropbox/ILKConsultancy/ambient_data/Image3.JPG) | |:--:| 
 | *BAM Correction equation* |
 
 
