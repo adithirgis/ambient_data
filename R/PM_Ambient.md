@@ -37,7 +37,7 @@ calendarPlot(Final1, pollutant = "BAM_CSTEP")
 
 ## Correction of DustTrak 8530 using this equation- y=0.21x+11.1
 
-| ![](Image3.JPG) |
+| ![](PM_Ambient_files/figure-gfm/Image3.JPG) |
 | :----------------------------------------------------: |
 |               *BAM Correction equation*                |
 
