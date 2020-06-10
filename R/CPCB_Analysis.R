@@ -36,15 +36,16 @@
   }
   
   ### Create 3 blank dataframes 
-  CPCB_hourly<-data.frame()
-  CPCB_daily1<-data.frame()
-  CPCB_monthly<-data.frame()
   
-  setwd("D:/Dropbox/APMfull/CPCB/Karnataka/Karnataka/Bengaluru")
+  
+  setwd("D:/Dropbox/APMfull/CPCB/1 Hour/Bengaluru/CPCB_ILK")
   sub_dir<-list.dirs(full.names = TRUE)
   ### List files where the data is kept
   for (fol in (sub_dir)) { 
-    dir<-paste0("D:/Dropbox/APMfull/CPCB/Karnataka/Karnataka/Bengaluru", fol)
+    CPCB_hourly<-data.frame()
+    CPCB_daily1<-data.frame()
+    CPCB_monthly<-data.frame()
+    dir<-paste0("D:/Dropbox/APMfull/CPCB/1 Hour/Bengaluru/CPCB_ILK", fol)
     shp_list1<- list.files(dir, pattern="\\.xlsx$",full.names=T)
     for (fil in (shp_list1)) {
       trial <- read.xlsx2(fil ,1,  startRow=17)
@@ -351,7 +352,7 @@
       name_f<-paste0(fil, "_monthly.csv")
       write.csv(FinalAll_month1, name_f )
     }
-    setwd(paste0("D:/Dropbox/APMfull/CPCB/Karnataka/Karnataka/Bengaluru/",fol))
+    setwd(paste0("D:/Dropbox/APMfull/CPCB/1 Hour/Bengaluru/CPCB_ILK/",fol))
     write.csv(CPCB_hourly,paste0( fol,"_hourly.csv" ))
     write.csv(CPCB_daily1,paste0( fol,"_daily.csv" ))
     write.csv(CPCB_monthly,paste0( fol,"_monthly.csv" ))
