@@ -7,11 +7,23 @@ Adithi
 
 The instruments used:
 
-  - at CSTEP : AE33 (24 hours)
-
-  - at ILK Labs : AE51 (30 mins before and after the ride)
+ - at ILK Labs : Loading Corrected AE51 (30 mins before and after the ride)
+ 
+ - at CSTEP : AE33 (24 hours)
 
 ## Days of measurement- Start Date
+
+  - Loading Corrected AE51: 14 May 2019
+
+*Average of ambient hour*
+
+``` r
+names(data_final_BC1)<-c("date", "LC_AE51_ILK")
+calendarPlot(data_final_BC1, pollutant = "LC_AE51_ILK")
+```
+
+![](BC_Ambient_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
 
   - AE33: 11 July 2019
 
@@ -23,17 +35,6 @@ calendarPlot(Final1, pollutant = "AE33_CSTEP")
 ```
 
 ![](BC_Ambient_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
-
-  - AE51: 14 May 2019
-
-*Average of ambient hour.*
-
-``` r
-names(data_final_BC1)<-c("date", "LC_AE51_ILK")
-calendarPlot(data_final_BC1, pollutant = "LC_AE51_ILK")
-```
-
-![](BC_Ambient_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ## Correlation plot
 
