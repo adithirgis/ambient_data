@@ -3,18 +3,7 @@ PM2.5 Ambient
 Adithi
 5/30/2020
 
-<style type="text/css">
 
-body, td {
-   font-size: 16px;
-}
-code.r{
-  font-size: 16px;
-}
-pre {
-  font-size: 16px
-}
-</style>
 
 ## PM<sub>2.5</sub> Ambient Measurements at CSTEP and ILK Labs
 
@@ -50,7 +39,7 @@ calendarPlot(Final1, pollutant = "BAM_CSTEP")
 
 ## Correction of DustTrak 8530 using this equation- y=0.21x+11.1
 
-| ![](D:/Dropbox/ILKConsultancy/ambient_data/Image3.JPG) |
+| ![](PM_Ambient_CPCB_files/figure-gfm/Image3.JPG) |
 | :----------------------------------------------------: |
 |               *BAM Correction equation*                |
 

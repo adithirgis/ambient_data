@@ -324,8 +324,8 @@ The t-test resulted in p value = `r a`, mean of LC_AE51_ILK = `r b`, and mean of
 
 
 ```{r  message=FALSE, warning=FALSE}
-BC_melt<-reshape2::melt(BC, id="hour", measure.vars = c( "LC_AE51_ILK",  "AE33_CSTEP") )
-names(BC_melt)<-c("hour","Instrument", "BC")
+BC_melt<-reshape2::melt(BC, id="date", measure.vars = c( "LC_AE51_ILK",  "AE33_CSTEP") )
+names(BC_melt)<-c("date","Instrument", "BC")
 p1<-ggplot(BC_melt, aes(Instrument, BC))+ 
   labs(x="", y= expression(paste("BC" ," (", mu, "g",~m^{-3}, ")")),title=paste0(""))+
   stat_summary(fun.data = f, geom="boxplot", width=0.2, size=1.2)+  
