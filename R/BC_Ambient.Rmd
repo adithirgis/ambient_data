@@ -286,7 +286,6 @@ t
 
 
 ```{r   message=FALSE, warning=FALSE, fig.width=9, fig.height=6}
-extrafont::loadfonts(device = "win")
 theme_set(theme_light(base_size = 15, base_family = "Poppins"))
 names(BC)<-c("date", "LC_AE51_ILK",  "AE33_CSTEP")
 BC$date<- as.POSIXct(BC$date, format='%Y-%m-%d %H:%M:%S', tz="Asia/Kolkata")
