@@ -5,32 +5,43 @@ date: "5/30/2020"
 output: github_document
 ---
 
+
+
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+</style>
+
+
+
 ```{r setup, include=FALSE}
-library(shiny)
-library(DT)
+
 library(plotly)
-library(lubridate)
 library(data.table)
 library(zoo)
 library(xts)
-library(data.table)
 library(stringr)
 library(dplyr)
 library(ggplot2)
 library(readr)
 library(tidyverse)
 library(keyring)
-library(leaflet)
-library(htmltools)
+library(extrafont)
+library(ggsci)
 library(lubridate) # Timestamp maniupulation
 library(raster)
 library(rgdal)
 library(sp)
 library(sf)
 library(scales)
-library(mailR)
-library(blastula)
-library(rsconnect)
 library(caTools)
 library(curl)
 library(devtools)
@@ -187,7 +198,7 @@ calendarPlot(Final1, pollutant = "BAM_CSTEP")
 
 ## Correction of DustTrak 8530 using this equation- y=0.21x+11.1
 
-| ![\Uncorrected{fig: `DT8530_PM2.5`}](Image3.JPG) | 
+| ![\Uncorrected{fig: `DT8530_PM2.5`}](D:/Dropbox/ILKConsultancy/ambient_data/Image3.JPG) | 
 |:--:| 
 | *BAM Correction equation* |
 
@@ -207,10 +218,37 @@ t<- Correlation(PM$BAM_CSTEP, PM$DT_ILK, PM, lm, 10, 45, 50, "DT_ILK", "BAM_CSTE
 t
 ```
 
-## t-test
+## Time series
+
+
+
 
 ```{r   message=FALSE, warning=FALSE}
-t.test(PM$DT_ILK,PM$BAM_CSTEP )
+extrafont::loadfonts(device = "win")
+theme_set(theme_light(base_size = 15, base_family = "Poppins"))
+
+names(PM)<-c("date", "DT_ILK",  "BAM_CSTEP")
+PM$date<- as.POSIXct(PM$date, format='%Y-%m-%d %H:%M:%S', tz="Asia/Kolkata")
+PM_melt<-reshape2::melt(PM, id="date", measure.vars = c( "DT_ILK",  "BAM_CSTEP") )
+names(PM_melt)<-c("date","Instrument", "PM")
+p1<-ggplot(PM_melt, aes(date, PM, color=Instrument))+
+  labs(x="",  y= expression(paste(PM[2.5] ," (", mu, "g",~m^{-3}, ")")),title=paste0(""))+ scale_y_continuous(limits = c(0,75), expand = c(0, 0))+scale_x_datetime(date_breaks = "1 month", date_labels = "%b %y")+scale_color_uchicago() +
+  theme(axis.title = element_text(size = 16, face = "bold"),
+        axis.text.x = element_text(family = "Roboto Mono", size = 14, angle = 90), panel.border = element_rect(colour = "black", fill="NA", size=1.2))+ 
+  geom_hline(aes(yintercept = 60), color = "red", size = 1)+geom_line(size=1.2)+annotate("text", x = as.POSIXct("2019-07-30 21:00:00"), y = 65, family = "Poppins", size = 5, color = "red",label = "National Standard")+annotate("text", x = as.POSIXct("2019-07-30 21:00:00"), y = 65, family = "Poppins", size = 5, color = "red",label = "National Standard")
+p1
+```
+
+
+## t-test
+
+```{r   message=FALSE, warning=FALSE, results=FALSE, include=FALSE}
+t_test<-t.test(PM$DT_ILK,PM$BAM_CSTEP )
+```
+
+
+```{r   message=FALSE, warning=FALSE, size = 'tiny'}
+print(paste0("The t-test resulted in p value = ", round(t_test$p.value, digits = 5), ", mean of DT_ILK = ", round(t_test$estimate[1], digits = 2), " and mean of BAM_CSTEP = ", round(t_test$estimate[2], digits=2)))
 ```
 
 ## Box Plot
