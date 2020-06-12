@@ -32,6 +32,7 @@ library(extrafont)
 library(ggsci)
 library(stringr)
 library(dplyr)
+extrafont::loadfonts(device = "win")
 library(ggplot2)
 library(readr)
 library(tidyverse)
@@ -287,7 +288,6 @@ t
 
 
 ```{r   message=FALSE, warning=FALSE, fig.width=9, fig.height=6}
-extrafont::loadfonts(device = "win")
 theme_set(theme_light(base_size = 15, base_family = "Poppins"))
 
 names(BC)<-c("date", "LC_AE51_ILK",  "AE33_CSTEP")
