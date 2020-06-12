@@ -3,18 +3,6 @@ DustTrak and CPCB Analysis
 Adithi
 6/10/2020
 
-<style type="text/css">
-
-body, td {
-   font-size: 16px;
-}
-code.r{
-  font-size: 16px;
-}
-pre {
-  font-size: 16px
-}
-</style>
 
 ## PM<sub>2.5</sub> Ambient Measurements at CPCB and ILK Labs
 
@@ -50,7 +38,7 @@ calendarPlot(CPCB_hebbal, pollutant = "CPCB_HB")
 
 ## Correction of DustTrak 8530 using this equation- y=0.21x+11.1
 
-| ![](D:/Dropbox/ILKConsultancy/ambient_data/Image3.JPG) |
+| ![](PM_Ambient_CPCB_files/figure-gfm/Image3.JPG) |
 | :----------------------------------------------------: |
 |               *BAM Correction equation*                |
 
