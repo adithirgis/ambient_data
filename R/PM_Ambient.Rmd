@@ -5,8 +5,6 @@ date: "5/30/2020"
 output: github_document
 ---
 
-
-
 <style type="text/css">
 
 body, td {
