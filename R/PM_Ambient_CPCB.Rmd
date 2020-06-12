@@ -231,7 +231,7 @@ p1
 
 ```{r   message=FALSE, warning=FALSE, include=FALSE}
 t_test<-t.test(PM$DT_ILK,PM$CPCB_HB )
-a<-round(t_test$p.value, digits = 3)
+a<-round(t_test$p.value, digits = 4)
 b<- round(t_test$estimate[1], digits = 2)
 c<- round(t_test$estimate[2], digits=2)
 
