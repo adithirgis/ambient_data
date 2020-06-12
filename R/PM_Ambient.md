@@ -3,6 +3,19 @@ PM2.5 Ambient
 Adithi
 5/30/2020
 
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+</style>
+
 ## PM<sub>2.5</sub> Ambient Measurements at CSTEP and ILK Labs
 
 The instruments used were:
@@ -37,7 +50,7 @@ calendarPlot(Final1, pollutant = "BAM_CSTEP")
 
 ## Correction of DustTrak 8530 using this equation- y=0.21x+11.1
 
-| ![](PM_Ambient_files/figure-gfm/Image3.JPG) |
+| ![](D:/Dropbox/ILKConsultancy/ambient_data/Image3.JPG) |
 | :----------------------------------------------------: |
 |               *BAM Correction equation*                |
 
@@ -66,23 +79,30 @@ t
 
 ![](PM_Ambient_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
-## t-test
+## Time series
 
 ``` r
-t.test(PM$DT_ILK,PM$BAM_CSTEP )
+extrafont::loadfonts(device = "win")
+theme_set(theme_light(base_size = 15, base_family = "Poppins"))
+
+names(PM)<-c("date", "DT_ILK",  "BAM_CSTEP")
+PM$date<- as.POSIXct(PM$date, format='%Y-%m-%d %H:%M:%S', tz="Asia/Kolkata")
+PM_melt<-reshape2::melt(PM, id="date", measure.vars = c( "DT_ILK",  "BAM_CSTEP") )
+names(PM_melt)<-c("date","Instrument", "PM")
+p1<-ggplot(PM_melt, aes(date, PM, color=Instrument))+
+  labs(x="",  y= expression(paste(PM[2.5] ," (", mu, "g",~m^{-3}, ")")),title=paste0(""))+ scale_y_continuous(limits = c(0,75), expand = c(0, 0))+scale_x_datetime(date_breaks = "1 month", date_labels = "%b %y")+scale_color_uchicago() +
+  theme(axis.title = element_text(size = 16, face = "bold"),
+        axis.text.x = element_text(family = "Roboto Mono", size = 14, angle = 90), panel.border = element_rect(colour = "black", fill="NA", size=1.2))+ 
+  geom_hline(aes(yintercept = 60), color = "red", size = 1)+geom_line(size=1.2)+annotate("text", x = as.POSIXct("2019-07-30 21:00:00"), y = 65, family = "Poppins", size = 5, color = "red",label = "National Standard")
+p1
 ```
 
-    ## 
-    ##  Welch Two Sample t-test
-    ## 
-    ## data:  PM$DT_ILK and PM$BAM_CSTEP
-    ## t = 5.2747, df = 387.46, p-value = 2.217e-07
-    ## alternative hypothesis: true difference in means is not equal to 0
-    ## 95 percent confidence interval:
-    ##  3.224191 7.056115
-    ## sample estimates:
-    ## mean of x mean of y 
-    ##  26.39297  21.25282
+![](PM_Ambient_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+## t-test
+
+The t-test resulted in p value = 0, mean of DT\_ILK = 26.39, and mean of
+BAM\_CSTEP = 21.25.
 
 ## Box Plot
 
@@ -102,7 +122,7 @@ p1<-ggplot(PM_melt, aes(Instrument, PM))+
 p1
 ```
 
-![](PM_Ambient_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](PM_Ambient_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ## Time Variations
 
@@ -121,13 +141,13 @@ names(PM)<-c("date", "DT",  "BAM")
 PM_timeVari<-timeVariation(PM, pollutant=c("DT",  "BAM"))
 ```
 
-![](PM_Ambient_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](PM_Ambient_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 plot(PM_timeVari, subset = "day.hour") 
 ```
 
-![](PM_Ambient_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+![](PM_Ambient_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
 2.  For the diurnal plot
 
@@ -137,7 +157,7 @@ plot(PM_timeVari, subset = "day.hour")
 plot(PM_timeVari, subset="hour") 
 ```
 
-![](PM_Ambient_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](PM_Ambient_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 3.  For the weekday plot
 
@@ -147,7 +167,7 @@ plot(PM_timeVari, subset="hour")
 plot(PM_timeVari, subset="day") 
 ```
 
-![](PM_Ambient_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](PM_Ambient_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 4.  For the monthly plot
 
@@ -157,4 +177,4 @@ plot(PM_timeVari, subset="day")
 plot(PM_timeVari, subset="month") 
 ```
 
-![](PM_Ambient_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](PM_Ambient_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
