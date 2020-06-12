@@ -5,15 +5,31 @@ date: "5/29/2020"
 output: github_document
 ---
   
+  
+
+
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+</style>
+
+
+
 ```{r setup, include=FALSE}
-library(shiny)
-library(DT)
-library(plotly)
-library(lubridate)
+
 library(data.table)
 library(zoo)
 library(xts)
-library(data.table)
+library(extrafont)
+library(ggsci)
 library(stringr)
 library(dplyr)
 library(ggplot2)
@@ -27,10 +43,6 @@ library(raster)
 library(rgdal)
 library(sp)
 library(sf)
-library(scales)
-library(mailR)
-library(blastula)
-library(rsconnect)
 library(caTools)
 library(curl)
 library(devtools)
@@ -270,11 +282,40 @@ t<- Correlation(BC$AE33_CSTEP, BC$LC_AE51_ILK, BC, lm, 5, 25, 30, "LC_AE51_ILK",
 t
 ```
 
-## t-test
+
+## Time series
+
 
 ```{r   message=FALSE, warning=FALSE}
-t.test(BC$LC_AE51_ILK,BC$AE33_CSTEP )
+extrafont::loadfonts(device = "win")
+theme_set(theme_light(base_size = 15, base_family = "Poppins"))
+
+names(BC)<-c("date", "LC_AE51_ILK",  "AE33_CSTEP")
+BC$date<- as.POSIXct(BC$date, format='%Y-%m-%d %H:%M:%S', tz="Asia/Kolkata")
+BC_melt<-reshape2::melt(BC, id="date", measure.vars = c( "LC_AE51_ILK",  "AE33_CSTEP") )
+names(BC_melt)<-c("date","Instrument", "BC")
+p1<-ggplot(BC_melt, aes(date, BC, color=Instrument))+
+  labs(x="",  y= expression(paste(BC[2.5] ," (", mu, "g",~m^{-3}, ")")),title=paste0(""))+ scale_y_continuous(limits = c(0,75), expand = c(0, 0))+scale_x_datetime(date_breaks = "1 month", date_labels = "%b %y")+scale_color_uchicago() +
+  theme(axis.title = element_text(size = 16, face = "bold"),
+        axis.text.x = element_text(family = "Roboto Mono", size = 14, angle = 90), panel.border = element_rect(colour = "black", fill="NA", size=1.2))+ 
+  geom_hline(aes(yintercept = 60), color = "red", size = 1)+geom_line(size=1.2)+annotate("text", x = as.POSIXct("2019-07-30 21:00:00"), y = 65, family = "Poppins", size = 5, color = "red",label = "National Standard")+annotate("text", x = as.POSIXct("2019-07-30 21:00:00"), y = 65, family = "Poppins", size = 5, color = "red",label = "National Standard")
+p1
 ```
+
+## t-test
+
+```{r   message=FALSE, warning=FALSE, results=FALSE, include=FALSE}
+t_test<-t.test(BC$LC_AE51_ILK,BC$AE33_CSTEP )
+```
+
+
+
+
+
+```{r   message=FALSE, warning=FALSE}
+print(paste0("The t-test resulted in p value = ", round(t_test$p.value, digits = 5), ", mean of LC_AE51_ILK = ", round(t_test$estimate[1], digits = 2), " and mean of AE33_CSTEP = ", round(t_test$estimate[2], digits=2)))
+```
+
 
 ## Box Plot
 
