@@ -6,11 +6,6 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-library(shiny)
-library(DT)
-library(plotly)
-library(lubridate)
-library(data.table)
 library(zoo)
 library(xts)
 library(data.table)
@@ -20,23 +15,9 @@ library(ggplot2)
 library(readr)
 library(tidyverse)
 library(keyring)
-library(leaflet)
 library(htmltools)
 library(lubridate) # Timestamp maniupulation
-library(raster)
-library(rgdal)
-library(sp)
-library(sf)
-library(scales)
-library(mailR)
-library(blastula)
-library(rsconnect)
-library(caTools)
-library(curl)
-library(devtools)
-library(XML)
-library(purrr)
-library(openair)
+
 
 ############# Wrap Function
 Correlation <- function(y, x, data, lm, a, b, c, x_axi, y_axi) {
@@ -83,23 +64,9 @@ completeFun <- function(data, desiredCols) {
   return(data[completeVec, ])
 }
 
-extrafont::loadfonts(device = "win")
-
-theme_set(theme_light(base_size = 15, base_family = "Poppins"))
 ```
 
 
-
-
-```{r warning=FALSE, message=FALSE, results=FALSE, include=FALSE}
-CPCB<-read.csv("D:/Dropbox/APMfull/CPCB/Karnataka/Punjab/Amritsar/Amritsar_daily.csv")
-CPCB$date <- as.POSIXct(CPCB$day, format='%Y-%m-%d', tz="Asia/Kolkata")
-CPCB$day <-NULL
-CPCB<-dplyr::select(CPCB, date, PM2.5_mean, PM10_mean, SO2_mean, NO2_mean, Ozone_mean)
-CPCB$month<-format(CPCB$date, "%b %Y")
-CPCB$month <- factor(CPCB$month, levels=unique(CPCB$month))
-CPCB$month <- factor(CPCB$month, levels=c("Jan 2017", "Feb 2017", "Mar 2017", "Apr 2017", "May 2017", "Jun 2017", "Jul 2017", "Aug 2017", "Sep 2017", "Oct 2017", "Nov 2017", "Dec 2017","Jan 2018", "Feb 2018", "Mar 2018", "Apr 2018", "May 2018", "Jun 2018", "Jul 2018", "Aug 2018", "Sep 2018", "Oct 2018", "Nov 2018", "Dec 2018", "Jan 2019", "Feb 2019", "Mar 2019", "Apr 2019", "May 2019", "Jun 2019", "Jul 2019", "Aug 2019", "Sep 2019", "Oct 2019", "Nov 2019", "Dec 2019" ))
-```
 
 ## Days of measurement
 
@@ -109,72 +76,42 @@ CPCB$month <- factor(CPCB$month, levels=c("Jan 2017", "Feb 2017", "Mar 2017", "A
 
 _24 hour average_
 
-## Box Plot
 
 
-```{r  message=FALSE, warning=FALSE}
-
-p1<-ggplot(CPCB, aes(month, PM2.5_mean ))+ 
-  labs(x="",  y= expression(paste(PM[2.5] ," (", mu, "g",~m^{-3}, ")")),title=paste("Amritsar, Punjab"))+
-  stat_summary(fun.data = f, geom="boxplot", width=0.5, size=1.0)+  
-  stat_summary(fun.y=mean, colour="black", geom="point",size=1.4)+
-  scale_y_continuous(limits = c(0,250), expand = c(0, 0))+theme_minimal()+
-  theme(legend.text=element_text(size=14),plot.subtitle = element_text(size = 10, face = "bold"),
-        plot.title = element_text(size = 18, face = "bold"), 
-        axis.title = element_text(size=18, face="bold"),axis.text = element_text(size = 16, colour = "black"),axis.text.x = element_text(size = 12,  angle=90),panel.border = element_rect(colour = "black", fill=NA, size=1.2) )+
-  scale_x_discrete(breaks=c("Jan 2017","Apr 2017","Jul 2017","Oct 2017","Jan 2018","Apr 2018","Jul 2018","Oct 2018","Jan 2019","Apr 2019", "Jul 2019","Oct 2019"),labels =c("Jan 2017","Apr 2017","Jul 2017","Oct 2017","Jan 2018","Apr 2018","Jul 2018","Oct 2018","Jan 2019","Apr 2019", "Jul 2019","Oct 2019"))
-p1
-
-
-```
-
-```{r  message=FALSE, warning=FALSE}
-
-p1<-ggplot(CPCB, aes(month, PM10_mean ))+ 
-  labs(x="",  y= expression(paste(PM[10] ," (", mu, "g",~m^{-3}, ")")),title=paste("Amritsar, Punjab"))+
-  stat_summary(fun.data = f, geom="boxplot", width=0.5, size=1.0)+  
-  stat_summary(fun.y=mean, colour="black", geom="point",size=1.4)+
-  scale_y_continuous(limits = c(0,500), expand = c(0, 0))+theme_minimal()+
-  theme(legend.text=element_text(size=14),plot.subtitle = element_text(size = 10, face = "bold"),
-        plot.title = element_text(size = 18, face = "bold"), 
-        axis.title = element_text(size=18, face="bold"),axis.text = element_text(size = 16, colour = "black"),axis.text.x = element_text(size = 12,  angle=90),panel.border = element_rect(colour = "black", fill=NA, size=1.2) )+
-  scale_x_discrete(breaks=c("Jan 2017","Apr 2017","Jul 2017","Oct 2017","Jan 2018","Apr 2018","Jul 2018","Oct 2018","Jan 2019","Apr 2019", "Jul 2019","Oct 2019"),labels =c("Jan 2017","Apr 2017","Jul 2017","Oct 2017","Jan 2018","Apr 2018","Jul 2018","Oct 2018","Jan 2019","Apr 2019", "Jul 2019","Oct 2019"))
-p1
-
+```{r warning=FALSE, message=FALSE, results=FALSE, include=FALSE}
+CPCB<-read.csv("D:/Dropbox/APMfull/CPCB/Karnataka/Punjab/Amritsar/Amritsar_daily.csv")
+CPCB$date <- as.POSIXct(CPCB$day, format='%Y-%m-%d', tz="Asia/Kolkata")
+CPCB$day <-NULL
+CPCB<-dplyr::select(CPCB, date, ends_with("_mean"))
+CPCB$month<-format(CPCB$date, "%Y-%m-01 01:00:00")
+CPCB$month<-as.POSIXct(CPCB$month, format='%Y-%m-%d %H:%M:%S', tz="Asia/Kolkata")
 
 ```
 
 
-```{r  message=FALSE, warning=FALSE}
 
-p1<-ggplot(CPCB, aes(month, NO2_mean ))+ 
-  labs(x="",  y= expression(paste(NO[2] ," (", mu, "g",~m^{-3}, ")")),title=paste("Amritsar, Punjab"))+
+```{r warning=FALSE, message=FALSE}
+CPCB_rem<-CPCB
+CPCB_rem$date<-NULL
+CPCB_rem$month<-NULL
+uniq_species = colnames(CPCB_rem)
+CPCB$month<-ymd_hms(CPCB$month)
+plot_list = list()
+for (i in  uniq_species) {
+  yo=CPCB[[i]]
+   j<-gsub("_mean", "", i)
+      p <- ggplot(CPCB, aes(x=reorder(format(CPCB$date,'%b %y'),CPCB$date), y=yo)) + 
+  labs(x="",  y=j, title=paste("Amritsar, Punjab"))+
   stat_summary(fun.data = f, geom="boxplot", width=0.5, size=1.0)+  
   stat_summary(fun.y=mean, colour="black", geom="point",size=1.4)+
-  scale_y_continuous(limits = c(0,100), expand = c(0, 0))+theme_minimal()+
-  theme(legend.text=element_text(size=14),plot.subtitle = element_text(size = 10, face = "bold"),
-        plot.title = element_text(size = 18, face = "bold"), 
-        axis.title = element_text(size=18, face="bold"),axis.text = element_text(size = 16, colour = "black"),axis.text.x = element_text(size = 12,  angle=90),panel.border = element_rect(colour = "black", fill=NA, size=1.2) )+
-  scale_x_discrete(breaks=c("Jan 2017","Apr 2017","Jul 2017","Oct 2017","Jan 2018","Apr 2018","Jul 2018","Oct 2018","Jan 2019","Apr 2019", "Jul 2019","Oct 2019"),labels =c("Jan 2017","Apr 2017","Jul 2017","Oct 2017","Jan 2018","Apr 2018","Jul 2018","Oct 2018","Jan 2019","Apr 2019", "Jul 2019","Oct 2019"))
-p1
-
+  scale_y_continuous( expand = c(0,0))+theme_minimal()+
+  theme(legend.text=element_text(size=14),plot.subtitle = element_text(size = 10, face = "bold"),plot.title = element_text(size = 18, face = "bold"), 
+        axis.title = element_text(size=18, face="bold"),axis.text = element_text(size = 16, colour = "black"),axis.text.x = element_text(size = 12,  angle=90),panel.border = element_rect(colour = "black", fill=NA, size=1.2) )
+      p
+     
+ggsave(paste0("Amritsar_",j,"_plot.JPG"), p, width = 9, height = 6)
+}
 
 ```
 
-
-```{r  message=FALSE, warning=FALSE}
-
-p1<-ggplot(CPCB, aes(month, SO2_mean ))+ 
-  labs(x="",  y= expression(paste(SO[2] ," (", mu, "g",~m^{-3}, ")")),title=paste("Amritsar, Punjab"))+
-  stat_summary(fun.data = f, geom="boxplot", width=0.5, size=1.0)+  
-  stat_summary(fun.y=mean, colour="black", geom="point",size=1.4)+
-  scale_y_continuous(limits = c(0,70), expand = c(0, 0))+theme_minimal()+
-  theme(legend.text=element_text(size=14),plot.subtitle = element_text(size = 10, face = "bold"),
-        plot.title = element_text(size = 18, face = "bold"), 
-        axis.title = element_text(size=18, face="bold"),axis.text = element_text(size = 16, colour = "black"),axis.text.x = element_text(size = 12,  angle=90),panel.border = element_rect(colour = "black", fill=NA, size=1.2) )+
-  scale_x_discrete(breaks=c("Jan 2017","Apr 2017","Jul 2017","Oct 2017","Jan 2018","Apr 2018","Jul 2018","Oct 2018","Jan 2019","Apr 2019", "Jul 2019","Oct 2019"),labels =c("Jan 2017","Apr 2017","Jul 2017","Oct 2017","Jan 2018","Apr 2018","Jul 2018","Oct 2018","Jan 2019","Apr 2019", "Jul 2019","Oct 2019"))
-p1
-
-
-```
 
