@@ -211,35 +211,26 @@ for (fol in (sub_dir)) {
     } else {
       CPCB_hour$ratio <- NA
     }
-    write.csv(CPCB_hour1, paste0(fil, "_hourly.csv"))
+    write.csv(CPCB_hour, paste0(fil, "_hourly.csv"))
     
     
-    
-    Final_day_2<-CPCB_hour1%>%
-      group_by(day)%>%
+    ### Daily file
+    Final_day_2 <- CPCB_hour %>%
+      group_by(day) %>%
       summarise_all(funs(mean, sd, median, IQR), na.rm = TRUE)
-    Final_day_2$date_mean<-NULL
-    Final_day_2$date_sd<-NULL
-    Final_day_2$date_IQR<-NULL
-    Final_day_2$date_median<-NULL
-    Final_day_2$ratio_sd<-NULL
-    Final_day_2$ratio_IQR<-NULL
-    Final_day_2$ratio_median<-NULL
-    day<-seq(
-      from=as.Date(x1,format='%Y-%m-%d', tz="Asia/Kolkata"),
-      to=as.Date(x2, format='%Y-%m-%d', tz="Asia/Kolkata"),
-      by="1 day"
+    Final_day_2[ ,c('date_mean', 'date_sd', 'date_IQR', 'date_median', 'ratio_sd', 
+                    'ratio_IQR', 'ratio_median')] <- list(NULL)
+    day <- seq(
+      from = as.Date(x1, format = '%Y-%m-%d', tz = "Asia/Kolkata"),
+      to = as.Date(x2, format = '%Y-%m-%d', tz = "Asia/Kolkata"),
+      by = "1 day"
     ) 
-    tseries_df2<-data.frame(day)
-    setDT(tseries_df2)
-    setkey(tseries_df2, day)
-    Final_day_2$day<-as.Date(Final_day_2$day, format='%Y-%m-%d', tz="Asia/Kolkata")
-    setDT(Final_day_2)
-    setkey(Final_day_2, day)
-    CPCB_daily1<-rbind(CPCB_daily1,Final_day_2)
-    name_f<-paste0(fil, "_daily.csv")
-    Final_day_2<-left_join(tseries_df2, Final_day_2, by="day")
-    write.csv(Final_day_2, name_f )
+    tseries_df2 <- data.frame(day)
+    Final_day_2$day <- as.Date(Final_day_2$day, format = '%Y-%m-%d', tz = "Asia/Kolkata")
+    CPCB_daily1 <- rbind(CPCB_daily1, Final_day_2)
+    Final_day_2 <- left_join(tseries_df2, Final_day_2, by = "day")
+    write.csv(Final_day_2, paste0(fil, "_daily.csv"))
+    
     CPCB_hour$date<-NULL
     Final_day<-CPCB_hour%>%
       group_by(day)%>%
