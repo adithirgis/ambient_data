@@ -44,8 +44,7 @@ for (fol in (sub_dir)) {
   dir <- paste0("D:/Dropbox/APMfull/CPCB/1 Hour/Bengaluru/CPCB_ILK", fol)
   list_files <- list.files(dir, pattern = "\\.xlsx$", full.names = T)
   for (fil in (list_files)) {
-    trial <- read.xlsx2("D:/Dropbox/ILKConsultancy/ambient_data/data/Bapuji Nagar/site_16320200330134440.xlsx",
-                        1, startRow = 17)
+    trial <- read.xlsx2(fil, 1, startRow = 17)
     
     ### Date needs to be changed from %H:%M to %H:%M:%S
     trial$date <- gsub(":00", ":00:00", trial$To.Date, fixed = TRUE)
@@ -54,7 +53,7 @@ for (fol in (sub_dir)) {
     # splitting it based on empty rows after a set of parameters
     trial$tbl_id <- cumsum(!nzchar(trial$date))
     trial <- trial[nzchar(trial$date), ]
-    trial[ ,c('From.Date', 'To.Date')] <- list(NULL)
+    trial[ , c('From.Date', 'To.Date')] <- list(NULL)
     dt_s <- split(trial[, -ncol(trial)], trial$tbl_id)
     
     ### Three dataframes representing different parameters; Also the start and 
@@ -145,18 +144,14 @@ for (fol in (sub_dir)) {
       group_by(day) %>%
       mutate_all(funs(mean, sd), na.rm = TRUE) %>%
       select(everything(), -date_mean, -date_sd)
-    fil <- gsub(".xlsx", "", "site_163")
+    fil <- gsub(".xlsx", "", fil)
     for(i in names(name)){
       data_list <- FinalAll %>% 
         dplyr::select(date, day, starts_with(i))
       ### Check if you have similar names matching eg - NO
       if(i == "NO") {
-        CPCB_hour <- tseries_df %>%
-          select(-contains(c("_sd", "_mean")))
-        rem_no2 <- grep("NO2", colnames(data_list))
-        data_list <- data_list[, -rem_no2] 
-        rem_nox <- grep("NOx", colnames(data_list))
-        data_list <- data_list[, -rem_nox] 
+        data_list <- data_list %>%
+          select(-contains(c("NO2", "NOx")))
         mean <- paste0(i, "_mean")
         sd <- paste0(i, "_sd")
       } else {
@@ -218,7 +213,7 @@ for (fol in (sub_dir)) {
     Final_day_2 <- CPCB_hour %>%
       group_by(day) %>%
       summarise_all(funs(mean, sd, median, IQR), na.rm = TRUE)
-    Final_day_2[ ,c('date_mean', 'date_sd', 'date_IQR', 'date_median', 'ratio_sd', 
+    Final_day_2[ , c('date_mean', 'date_sd', 'date_IQR', 'date_median', 'ratio_sd', 
                     'ratio_IQR', 'ratio_median')] <- list(NULL)
     day <- seq(
       from = as.Date(x1, format = '%Y-%m-%d', tz = "Asia/Kolkata"),
@@ -232,7 +227,7 @@ for (fol in (sub_dir)) {
     write.csv(Final_day_2, paste0(fil, "_daily.csv"))
     
     
-    
+    ### Month Analysis
     Final_day <- CPCB_hour %>%
       select(everything(), -date) %>%
       group_by(day) %>%
@@ -241,41 +236,37 @@ for (fol in (sub_dir)) {
     tseries_df1 <- data.frame(day)
     
     for(i in names(name)){
-      data_list1<-Final_day %>% dplyr:: select(day, month,starts_with(i))
-      if(i=="NO"){
-        rem_no2<-grep("NO2", colnames(data_list1))
-        data_list1<-data_list1[,-rem_no2] 
-        rem_nox<-grep("NOx", colnames(data_list1))
-        data_list1<-data_list1[,-rem_nox] 
-        mean<-paste0(i,"_mean")
+      data_list <- Final_day %>% 
+        dplyr:: select(day, month, starts_with(i))
+      if(i == "NO"){
+        data_list <- data_list %>%
+          select(-contains(c("NO2", "NOx")))
+        mean <- paste0(i, "_mean")
         
-      }else{
-        mean<-paste0(i,"_mean")
+      } else {
+        mean <- paste0(i,"_mean")
       }
-      data_list1<-data_list1%>% 
+      data_list <- data_list %>% 
         group_by(month) %>%
-        mutate_at(vars(contains(i)),list(no_day = ~ sum(!is.na(.))))
-      names(data_list1)[names(data_list1) == old_no ] <- 'no_day'
-      data_list1 <- subset(data_list1, no_day >=23)
-      data_list1$no_day<-NULL
-      data_list1$month<-NULL
-      setDT(data_list1)
-      setkey(data_list1, day)
-      tseries_df1<-left_join(tseries_df1, data_list1, by="day")
+        mutate_at(vars(contains(i)), list(no_day = ~ sum(!is.na(.))))
+      names(data_list)[names(data_list) == old_no ] <- 'no_day'
+      data_list <- subset(data_list, no_day >= 23)
+      data_list[ , c('no_day', 'month')] <- list(NULL)
+      tseries_df1 <- left_join(tseries_df1, data_list, by = "day")
     }
-    CPCB_daily<-tseries_df1
-    columns.of.interest<-2:ncol(CPCB_daily)
-    CPCB_daily[ , columns.of.interest ] <- sapply( X = CPCB_daily[ , columns.of.interest ], FUN = function(x) as.numeric(as.character(x)))
-    CPCB_daily$month<-format(CPCB_daily$day, "%Y-%m")
+    
+    CPCB_daily <- tseries_df1 %>%
+      mutate(month = format(day, "%Y-%m")) %>%
+      select(day, month, everything())
+    col_interest <- 3:ncol(CPCB_daily)
+    CPCB_daily[ , col_interest] <- sapply(X = CPCB_daily[ , col_interest], 
+                                          FUN = function(x) as.numeric(as.character(x)))
     ### Calculate the monthly statistics.
-    FinalAll_month1<-CPCB_daily%>%
-      group_by(month)%>%
+    FinalAll_month1 <- CPCB_daily %>%
+      group_by(month) %>%
       summarise_all(funs(mean, sd, median, IQR), na.rm = TRUE)
-    FinalAll_month1$day_mean<-NULL
-    FinalAll_month1$day_sd<-NULL
-    FinalAll_month1$day_IQR<-NULL
-    FinalAll_month1$day_median<-NULL
-    CPCB_monthly<-rbind(CPCB_monthly,FinalAll_month1)
+    FinalAll_month1[ , c('day_mean', 'day_sd', 'day_IQR', 'day_median')] <- list(NULL)
+    CPCB_monthly <- rbind(CPCB_monthly, FinalAll_month1)
     write.csv(FinalAll_month1, paste0(fil, "_monthly.csv"))
   }
   setwd(paste0("D:/Dropbox/APMfull/CPCB/1 Hour/Bengaluru/CPCB_ILK/", fol))
