@@ -87,7 +87,7 @@ for (fol in (sub_dir)) {
         names(df) <- as.matrix(df[1, ])
         df <- df[-1, ]
         df[] <- lapply(df, function(x) type.convert(as.character(x)))
-        df <- Filter(function(x)!all(is.na(x)), df)
+        df <- Filter(function(x)! all(is.na(x)), df)
         df <- df %>%
           dplyr::select("date" = `To Date`, everything()) %>%
           mutate(date = as.POSIXct(date, format = '%d-%m-%Y %H:%M:%S', 
@@ -98,25 +98,22 @@ for (fol in (sub_dir)) {
     Beny <- make_df(dt_s$`4`, tseries_df)
     Bent <- make_df(dt_s$`6`, tseries_df)
     all <- list(Ben, Beny, Bent) %>% reduce(left_join, by = "date")
-    ### This code checked the number of column of date 
-    col_number <- which(colnames(Ben) == "date")
+    # col_number <- which(colnames(Ben) == "date")
     col_interest <- 2:ncol(all)
     
-    ### Replace all negative values in the desired columns with NA
+    ### Replace all negative values in all the columns with NA
     all[ , col_interest] <- sapply(X = all[ , col_interest], 
                                            FUN = function(x) as.numeric(as.character(x)))
     all[ , col_interest] <- sapply(X = all[ , col_interest], 
                                           FUN = function(x) ifelse(x < 0, NA, x))
-    all$PM2.5 <- 1
-    all$PM10 <- 2
-    ### For PM2.5 change all values above 985 to NA
+    ### For PM2.5 change all values above 985 and below zero to NA 
     if("PM2.5" %in% colnames(all))
     {
       a <- (all$PM2.5) > 985
       b <- (all$PM2.5) < 0
       all$PM2.5 <- ifelse(a | b, NA, all$PM2.5)
-      ### If PM10 values exist then check the rario of PM2.5/PM10 and if it is 
-      # greatar than 1 then remove those values
+      ### If PM10 values exist then check the rario of PM2.5 / PM10 and if it is 
+      # greater than 1 then remove those values
       if("PM10" %in% colnames(all))
       {
         all$ratio <- all$PM2.5 / all$PM10
@@ -126,52 +123,56 @@ for (fol in (sub_dir)) {
         all$ratio <- NA
       }
     }
-    all$ratio <- NULL
-    site1_join_f1 <- all
+    site1_join_f1 <- all %>%
+      mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) %>%
+      select(date, day, everything(), -ratio)
     
-    ### Check for consecutive repeated value and remove them using consecutive difference as 0
-    columns.of.interest <- 2:ncol( site1_join_f1 )
-    site1_join_f1[ , columns.of.interest ]<-sapply( X = site1_join_f1[, columns.of.interest ], FUN=function(j)
+    ### Check for consecutive repeated value and remove them using consecutive 
+    # difference as 0
+    col_interest <- 3:ncol(site1_join_f1)
+    site1_join_f1[ , col_interest] <- sapply(X = site1_join_f1[, col_interest], 
+                                            FUN = function(j)
       ifelse(c(FALSE, diff(as.numeric(j), 1, 1) == 0), NA, j))
-    columns.of.interest <-2:ncol( site1_join_f1 )
-    site1_join_f1[ , columns.of.interest ] <- sapply( X = site1_join_f1[ , columns.of.interest ] , FUN = function(x) as.numeric(as.character(x)))
-    site1_join_f1$day<-as.Date(site1_join_f1$date, format='%Y-%m-%d', tz="Asia/Kolkata")
-    name<-site1_join_f1
-    name$day<-NULL
-    name$month<-NULL
-    name$date<-NULL
+    site1_join_f1[ , col_interest] <- sapply(X = site1_join_f1[ , col_interest], 
+                                                      FUN = function(x) 
+                                                        as.numeric(as.character(x)))
+    name <- site1_join_f1 %>%
+      dplyr::select(everything(), -day, -date)
     
-    ### Now calculate the Mean and SD for all parameters to check for the Mean and SD conditions
-    FinalAll<-site1_join_f1%>%
+    ### Now calculate the Mean and SD for all parameters to check for some 
+    # conditions
+    FinalAll <- site1_join_f1 %>%
       group_by(day)%>%
-      mutate_all(funs(mean, sd), na.rm = TRUE)
-    fil<-gsub(".xlsx","",fil)
+      mutate_all(funs(mean, sd), na.rm = TRUE) %>%
+      select(everything(), -date_mean, -date_sd)
+    fil <- gsub(".xlsx", "", fil)
     for(i in names(name)){
-      data_list1<-FinalAll %>% dplyr:: select(date, day, starts_with(i))
-      if(i=="NO"){
-        rem_no2<-grep("NO2", colnames(data_list1))
-        data_list1<-data_list1[,-rem_no2] 
-        rem_nox<-grep("NOx", colnames(data_list1))
-        data_list1<-data_list1[,-rem_nox] 
-        mean<-paste0(i,"_mean")
-        sd<-paste0(i,"_sd")
-      }else{
-        mean<-paste0(i,"_mean")
-        sd<-paste0(i,"_sd")
+      data_list <- FinalAll %>% 
+        dplyr::select(date, day, starts_with(i))
+      ### Check if you have similar names matching eg - NO
+      if(i == "NO") {
+        rem_no2 <- grep("NO2", colnames(data_list))
+        data_list <- data_list[, -rem_no2] 
+        rem_nox <- grep("NOx", colnames(data_list))
+        data_list <- data_list[, -rem_nox] 
+        mean <- paste0(i, "_mean")
+        sd <- paste0(i, "_sd")
+      } else {
+        mean <- paste0(i, "_mean")
+        sd <- paste0(i, "_sd")
       }
-      data_list1<-completeFun(data_list1, c(i, mean, sd))
-      x<-data_list1[[i]]
-      y<-grep("_mean", colnames(data_list1))
-      y<-data_list1[[y]]
-      z<-grep("_sd", colnames(data_list1))
-      z<-data_list1[[z]]
-      data_list1[[i]]<-mapply(LLD, x,y,z)
-      # try<-setDT(data_list1)[, lapply(.SD, function(x) sum(!is.na(x))), by = day]
-      data_list1<-data_list1%>% 
+      data_list <- completeFun(data_list, c(i, mean, sd))
+      x <- data_list[[i]]
+      y <- grep("_mean", colnames(data_list))
+      y <- data_list[[y]]
+      z <- grep("_sd", colnames(data_list))
+      z <- data_list[[z]]
+      data_list[[i]] <- mapply(LLD, x, y, z)
+      data_list <- data_list %>% 
         group_by(day) %>%
-        mutate_at(vars(contains(i)),list(no_hour = ~ sum(!is.na(.))))
-      rem_mean<-grep("_mean_no_hour", colnames(data_list1))
-      data_list1<-data_list1[,-rem_mean]
+        mutate_at(vars(contains(i)), list(no_hour = ~ sum(!is.na(.))))
+      rem_mean <- grep("_mean_no_hour", colnames(data_list))
+      data_list <-data_list[, -rem_mean]
       rem_sd<-grep("_sd_no_hour", colnames(data_list1))
       data_list1<-data_list1[,-rem_sd]
       old_no<-paste0(i, "_no_hour")
