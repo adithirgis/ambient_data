@@ -19,7 +19,8 @@ completeFun <- function(data, desiredCols) {
   completeVec <- complete.cases(data[, desiredCols])
   return(data[completeVec, ])
 }
-### Function to check for Mean+3SD and Mean-3SD; caution needs to have all the columns without NA values
+### Function to check for Mean+3SD and Mean-3SD; caution needs to have all the 
+# columns without NA values
 LLD <- function(x, y, z) {
   if (is.na(x)) {
     return (NA)
@@ -81,7 +82,6 @@ for (fol in (sub_dir)) {
       if(!nrow(df))
       {
         df <- tseries_df
-        print("empty data.frame after one tab")
       } else {
         names(df) <- as.matrix(df[1, ])
         df <- df[-1, ]
@@ -96,7 +96,7 @@ for (fol in (sub_dir)) {
     Ben <- make_df(dt_s$`2`, tseries_df)
     Beny <- make_df(dt_s$`4`, tseries_df)
     Bent <- make_df(dt_s$`6`, tseries_df)
-    all <- list(Ben, Beny, Bent) %>% reduce(left_join, by = "date")
+    all <- list(site1_join, Ben, Beny, Bent) %>% reduce(left_join, by = "date")
     # col_number <- which(colnames(Ben) == "date")
     col_interest <- 2:ncol(all)
     
@@ -255,14 +255,14 @@ for (fol in (sub_dir)) {
       tseries_df1 <- left_join(tseries_df1, data_list, by = "day")
     }
     
-    CPCB_daily <- tseries_df1 %>%
+    CPCB_daily1 <- tseries_df1 %>%
       mutate(month = format(day, "%Y-%m")) %>%
       select(day, month, everything())
-    col_interest <- 3:ncol(CPCB_daily)
-    CPCB_daily[ , col_interest] <- sapply(X = CPCB_daily[ , col_interest], 
+    col_interest <- 3:ncol(CPCB_daily1)
+    CPCB_daily1[ , col_interest] <- sapply(X = CPCB_daily1[ , col_interest], 
                                           FUN = function(x) as.numeric(as.character(x)))
     ### Calculate the monthly statistics.
-    FinalAll_month1 <- CPCB_daily %>%
+    FinalAll_month1 <- CPCB_daily1 %>%
       group_by(month) %>%
       summarise_all(funs(mean, sd, median, IQR), na.rm = TRUE)
     FinalAll_month1[ , c('day_mean', 'day_sd', 'day_IQR', 'day_median')] <- list(NULL)
