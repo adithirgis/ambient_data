@@ -94,7 +94,6 @@ for (fol in (sub_dir)) {
                                    tz = "Asia/Kolkata"))
       }
     }
-    
     Ben <- make_df(dt_s$`2`, tseries_df)
     Beny <- make_df(dt_s$`4`, tseries_df)
     Bent <- make_df(dt_s$`6`, tseries_df)
@@ -108,24 +107,27 @@ for (fol in (sub_dir)) {
                                            FUN = function(x) as.numeric(as.character(x)))
     all[ , col_interest] <- sapply(X = all[ , col_interest], 
                                           FUN = function(x) ifelse(x < 0, NA, x))
+    all$PM2.5 <- 1
+    all$PM10 <- 2
     ### For PM2.5 change all values above 985 to NA
     if("PM2.5" %in% colnames(all))
     {
-      a<-(site1_join$PM2.5)>985
-      b<-((site1_join$PM2.5)<(0))
-      site1_join$PM2.5<-ifelse(a,NA, site1_join$PM2.5)
-      ### If PM10 values exist then check the rario of PM2.5/PM10 and if it is gretar than 1 then remove those values
-      if("PM10" %in% colnames(site1_join))
+      a <- (all$PM2.5) > 985
+      b <- (all$PM2.5) < 0
+      all$PM2.5 <- ifelse(a | b, NA, all$PM2.5)
+      ### If PM10 values exist then check the rario of PM2.5/PM10 and if it is 
+      # greatar than 1 then remove those values
+      if("PM10" %in% colnames(all))
       {
-        site1_join$ratio<-site1_join$PM2.5/site1_join$PM10
-        site1_join$PM2.5<-ifelse(site1_join$ratio>=1, NA,site1_join$PM2.5 )
-        site1_join$PM10<-ifelse(site1_join$ratio>=1, NA,site1_join$PM10 )
-      }else{
-        site1_join$ratio<-NA
+        all$ratio <- all$PM2.5 / all$PM10
+        all$PM2.5 <- ifelse(all$ratio >= 1, NA, all$PM2.5)
+        all$PM10 <- ifelse(all$ratio >= 1, NA, all$PM10)
+      } else {
+        all$ratio <- NA
       }
     }
-    site1_join$ratio<-NULL
-    site1_join_f1<-site1_join
+    all$ratio <- NULL
+    site1_join_f1 <- all
     
     ### Check for consecutive repeated value and remove them using consecutive difference as 0
     columns.of.interest <- 2:ncol( site1_join_f1 )
