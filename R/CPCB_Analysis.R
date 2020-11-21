@@ -161,60 +161,49 @@ for (fol in (sub_dir)) {
         mean <- paste0(i, "_mean")
         sd <- paste0(i, "_sd")
       }
+      ### Remove empty rows
       data_list <- completeFun(data_list, c(i, mean, sd))
       x <- data_list[[i]]
       y <- grep("_mean", colnames(data_list))
       y <- data_list[[y]]
       z <- grep("_sd", colnames(data_list))
       z <- data_list[[z]]
+      ### Apply the condition of removing values which are >< (Mean +- 3 * SD)
       data_list[[i]] <- mapply(LLD, x, y, z)
+      ### Apply the condition of removing values of a day where data captured is less than 18 hours
       data_list <- data_list %>% 
         group_by(day) %>%
-        mutate_at(vars(contains(i)), list(no_hour = ~ sum(!is.na(.))))
-      rem_mean <- grep("_mean_no_hour", colnames(data_list))
-      data_list <-data_list[, -rem_mean]
-      rem_sd<-grep("_sd_no_hour", colnames(data_list1))
-      data_list1<-data_list1[,-rem_sd]
-      old_no<-paste0(i, "_no_hour")
-      names(data_list1)[names(data_list1) ==old_no ] <- 'no_hour'
-      data_list1 <- subset(data_list1, no_hour >=18)
-      if (dim(data_list1)[1] == 0)
+        mutate_at(vars(contains(i)), list(no_hour = ~ sum(!is.na(.)))) %>%
+        select(-contains(c("_sd_no_hour", "_mean_no_hour")))
+      old_no <- paste0(i, "_no_hour")
+      names(data_list)[names(data_list) == old_no] <- 'no_hour'
+      data_list <- subset(data_list, no_hour >= 18)
+      if (dim(data_list)[1] == 0)
       {
-        data_list1$no_hour<-NULL
-      }else{
-        grap<-calendarPlot(data_list1, i)
-        png(filename=paste0(fil,"_",i,"_plot.jpg"))
+        data_list$no_hour <- NULL
+      } else {
+        grap <- calendarPlot(data_list, i)
+        png(filename = paste0(fil, "_", i, "_plot.jpg"))
         plot(grap)
         dev.off()
-        data_list1$no_hour<-NULL
+        data_list$no_hour <- NULL
       }
-      data_list1$day<-NULL
-      setDT(data_list1)
-      setkey(data_list1, date)
-      tseries_df<-left_join(tseries_df, data_list1, by="date")
+      data_list$day <- NULL
+      tseries_df <- left_join(tseries_df, data_list, by = "date")
     }
-    CPCB_hour<-tseries_df
-    rem_sd<-grep("_sd", colnames(CPCB_hour))
-    CPCB_hour<-CPCB_hour[,-rem_sd]
-    rem_mean<-grep("mean", colnames(CPCB_hour))
-    CPCB_hour<-CPCB_hour[,-rem_mean]
-    columns.of.interest<-2:ncol(CPCB_hour)
-    CPCB_hour[ , columns.of.interest ] <- sapply( X = CPCB_hour[ , columns.of.interest ]
-                                                  , FUN = function(x) as.numeric(as.character(x)))
-    CPCB_hour$day<-as.Date(CPCB_hour$date, format='%Y-%m-%d', tz="Asia/Kolkata")
-    CPCB_hourly<-rbind(CPCB_hourly,CPCB_hour)
-    CPCB_hour1<-CPCB_hour
-    setDT(CPCB_hour1)
-    setkey(CPCB_hour1, date)
-    date<-seq(
-      from=as.POSIXct(x1, tz="Asia/Kolkata"),
-      to=as.POSIXct(x2, tz="Asia/Kolkata"),
-      by="60 min"
-    ) 
-    tseries_df<-data.frame(date)
+    CPCB_hour <- tseries_df %>%
+      select(-contains(c("_sd", "_mean")))
+    
+    col_interest <- 2:ncol(CPCB_hour)
+    CPCB_hour[ , col_interest] <- sapply(X = CPCB_hour[ , col_interest], 
+                                         FUN = function(x) as.numeric(as.character(x)))
+    CPCB_hour$day <- as.Date(CPCB_hour$date, format = '%Y-%m-%d', tz = "Asia/Kolkata")
+    CPCB_hourly <- rbind(CPCB_hourly, CPCB_hour)
+    CPCB_hour1 <- CPCB_hour
+    tseries_df <- data.frame(date)
     setDT(tseries_df)
     setkey(tseries_df, date)
-    CPCB_hour1<-left_join(tseries_df, CPCB_hour1, by="date")
+    CPCB_hour1 <- left_join(tseries_df, CPCB_hour1, by = "date")
     if("PM2.5" %in% colnames(CPCB_hour1) & "PM10" %in% colnames(CPCB_hour1) )
     {
       CPCB_hour1$ratio<-CPCB_hour1$PM2.5/CPCB_hour1$PM10
