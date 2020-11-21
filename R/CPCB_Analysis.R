@@ -125,7 +125,7 @@ for (fol in (sub_dir)) {
     }
     site1_join_f1 <- all %>%
       mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) %>%
-      select(date, day, everything(), -ratio)
+      select(date, day, everything())
     
     ### Check for consecutive repeated value and remove them using consecutive 
     # difference as 0
@@ -142,15 +142,17 @@ for (fol in (sub_dir)) {
     ### Now calculate the Mean and SD for all parameters to check for some 
     # conditions
     FinalAll <- site1_join_f1 %>%
-      group_by(day)%>%
+      group_by(day) %>%
       mutate_all(funs(mean, sd), na.rm = TRUE) %>%
       select(everything(), -date_mean, -date_sd)
-    fil <- gsub(".xlsx", "", fil)
+    fil <- gsub(".xlsx", "", "site_163")
     for(i in names(name)){
       data_list <- FinalAll %>% 
         dplyr::select(date, day, starts_with(i))
       ### Check if you have similar names matching eg - NO
       if(i == "NO") {
+        CPCB_hour <- tseries_df %>%
+          select(-contains(c("_sd", "_mean")))
         rem_no2 <- grep("NO2", colnames(data_list))
         data_list <- data_list[, -rem_no2] 
         rem_nox <- grep("NOx", colnames(data_list))
@@ -201,18 +203,18 @@ for (fol in (sub_dir)) {
     CPCB_hourly <- rbind(CPCB_hourly, CPCB_hour)
     CPCB_hour1 <- CPCB_hour
     tseries_df <- data.frame(date)
-    setDT(tseries_df)
-    setkey(tseries_df, date)
-    CPCB_hour1 <- left_join(tseries_df, CPCB_hour1, by = "date")
-    if("PM2.5" %in% colnames(CPCB_hour1) & "PM10" %in% colnames(CPCB_hour1) )
+    CPCB_hour1 <- left_join(tseries_df, CPCB_hour, by = "date")
+    if("PM2.5" %in% colnames(CPCB_hour) & "PM10" %in% colnames(CPCB_hour))
     {
-      CPCB_hour1$ratio<-CPCB_hour1$PM2.5/CPCB_hour1$PM10
-    }else{
-      CPCB_hour1$ratio<-NA
+      CPCB_hour <- CPCB_hour %>%
+        mutate(ratio = PM2.5 / PM10)
+    } else {
+      CPCB_hour$ratio <- NA
     }
-    name_f<-paste0(fil, "_hourly.csv")
-    write.csv(CPCB_hour1, name_f )
-    # df_Place2 = data.frame(lapply(Final_day_1, as.character), stringsAsFactors=FALSE)
+    write.csv(CPCB_hour1, paste0(fil, "_hourly.csv"))
+    
+    
+    
     Final_day_2<-CPCB_hour1%>%
       group_by(day)%>%
       summarise_all(funs(mean, sd, median, IQR), na.rm = TRUE)
