@@ -227,23 +227,19 @@ for (fol in (sub_dir)) {
     ) 
     tseries_df2 <- data.frame(day)
     Final_day_2$day <- as.Date(Final_day_2$day, format = '%Y-%m-%d', tz = "Asia/Kolkata")
-    CPCB_daily1 <- rbind(CPCB_daily1, Final_day_2)
+    CPCB_daily <- rbind(CPCB_daily, Final_day_2)
     Final_day_2 <- left_join(tseries_df2, Final_day_2, by = "day")
     write.csv(Final_day_2, paste0(fil, "_daily.csv"))
     
-    CPCB_hour$date<-NULL
-    Final_day<-CPCB_hour%>%
-      group_by(day)%>%
-      summarise_all(funs(mean), na.rm = TRUE)
-    Final_day$month<-format(Final_day$day, "%m")
-    day<-seq(
-      from=as.Date(x1,format='%Y-%m-%d', tz="Asia/Kolkata"),
-      to=as.Date(x2, format='%Y-%m-%d', tz="Asia/Kolkata"),
-      by="1 day"
-    ) 
-    tseries_df1<-data.frame(day)
-    setDT(tseries_df1)
-    setkey(tseries_df1, day)
+    
+    
+    Final_day <- CPCB_hour %>%
+      select(everything(), -date) %>%
+      group_by(day) %>%
+      summarise_all(funs(mean), na.rm = TRUE) %>%
+      mutate(month = format(day, "%m"))
+    tseries_df1 <- data.frame(day)
+    
     for(i in names(name)){
       data_list1<-Final_day %>% dplyr:: select(day, month,starts_with(i))
       if(i=="NO"){
@@ -280,13 +276,12 @@ for (fol in (sub_dir)) {
     FinalAll_month1$day_IQR<-NULL
     FinalAll_month1$day_median<-NULL
     CPCB_monthly<-rbind(CPCB_monthly,FinalAll_month1)
-    name_f<-paste0(fil, "_monthly.csv")
-    write.csv(FinalAll_month1, name_f )
+    write.csv(FinalAll_month1, paste0(fil, "_monthly.csv"))
   }
-  setwd(paste0("D:/Dropbox/APMfull/CPCB/1 Hour/Bengaluru/CPCB_ILK/",fol))
-  write.csv(CPCB_hourly,paste0( fol,"_hourly.csv" ))
-  write.csv(CPCB_daily1,paste0( fol,"_daily.csv" ))
-  write.csv(CPCB_monthly,paste0( fol,"_monthly.csv" ))
+  setwd(paste0("D:/Dropbox/APMfull/CPCB/1 Hour/Bengaluru/CPCB_ILK/", fol))
+  write.csv(CPCB_hourly, paste0(fol, "_hourly.csv"))
+  write.csv(CPCB_daily, paste0(fol, "_daily.csv"))
+  write.csv(CPCB_monthly, paste0(fol, "_monthly.csv"))
   
 }  
  
