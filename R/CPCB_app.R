@@ -49,7 +49,7 @@ ui <- fluidPage(
                              conditionalPanel(condition = "input.tabs1 == 1",
                                               tags$hr(),
                                               fileInput("file1",
-                                                        "CPCB 1 hour data",
+                                                        "CPCB hourly data",
                                                         multiple = TRUE,
                                                         accept = c('.xlsx')),
                                               tags$hr(),
@@ -61,9 +61,9 @@ ui <- fluidPage(
                                                            "Remove PM2.5 and PM10 values above",
                                                            value = 999),
                                               tags$hr(),
-                                              h5("Add a multiple for removing outliers (mean + y *(sd))"),
-                                              numericInput("e",
-                                                           "y * sd",
+                                              checkboxInput('exclude', 'Cleaning based on Mean and Std Dev'),
+                                              numericInput("ey",
+                                                           "Add a multiple for removing outliers (mean + y * (sd))",
                                                            value = 3.0),
                                               tags$hr(),
                                               h5("Add % of data completeness required in a day or month"),
@@ -115,15 +115,15 @@ server <- function(input, output, session) {
     }
     ### Function to check for Mean+3SD and Mean-3SD; caution needs to have all the columns without NA values
     LLD <- function(x, y, z, ey) {
-      if (is.na(x) ) {
+      if (is.na(x) || is.nan(x) || is.nan(y) || is.na(y) || is.na(z) || is.nan(z)) {
         return (NA)
       }
-      else if (x > (y + (ey * z)) || x < (y - (ey * z)) ){
+      else if (x > (y + (ey * z)) || x < (y - (ey * z))) {
         return (NA)
       }
       else if (is.null(x) || x == '' || is.null(y) || y == '' || is.null(z) || z == '') {
         return (NA)
-      } else
+      } else if(x < (y + (ey * z)) || x > (y - (ey * z)))
       {
         return (x)
       }
@@ -135,7 +135,6 @@ server <- function(input, output, session) {
     } else {
       trial <- read.xlsx2(input$file1$datapath, 1, startRow = 17)
       trial$date <- gsub(":00", ":00:00", trial$To.Date, fixed = TRUE)
-      
       ### This folder contains files with different columns on below other so 
       # splitting it based on empty rows after a set of parameters
       trial$tbl_id <- cumsum(!nzchar(trial$date))
@@ -217,12 +216,58 @@ server <- function(input, output, session) {
         col_interest <- 3:ncol(site1_join_f1)
         site1_join_f1[ , col_interest] <- sapply(X = site1_join_f1[, col_interest], 
                                                  FUN = function(j)
-                                                   ifelse(c(FALSE, diff(as.numeric(j), 1, 1) == 0), NA, j))
+                                                   ifelse(c(FALSE, diff(as.numeric(j), 1, 1) == 0), 
+                                                          NA, j))
         site1_join_f1[ , col_interest] <- sapply(X = site1_join_f1[ , col_interest], 
                                                  FUN = function(x) 
                                                    as.numeric(as.character(x)))
       } else { NULL }  
+      if(input$exclude) {
+        name <- site1_join_f1 %>%
+          dplyr::select(everything(), -day, -date)
+        ### Now calculate the Mean and SD for all parameters to check for some 
+        # conditions
+        site1_join_f1 <- site1_join_f1 %>%
+          group_by(day) %>%
+          mutate_all(funs(mean, sd), na.rm = TRUE) %>%
+          ungroup() %>%
+          select(everything(), -date_mean, -date_sd)
+        fil <- file_name_CPCB()
+        for(i in names(name)){
+          data_list <- site1_join_f1 %>% 
+            dplyr::select(date, - day, starts_with(i))
+          ### Check if you have similar names matching eg - NO
+          if(i == "NO") {
+            data_list <- data_list %>%
+              select(-contains(c("NO2", "NOx")))
+            mean <- paste0(i, "_mean")
+            sd <- paste0(i, "_sd")
+          } else {
+            mean <- paste0(i, "_mean")
+            sd <- paste0(i, "_sd")
+          }
+          ### Remove empty rows
+          data_list <- completeFun(data_list, c(i, mean, sd))
+          x <- data_list[[i]]
+          y <- grep("_mean", colnames(data_list))
+          y <- data_list[[y]]
+          z <- grep("_sd", colnames(data_list))
+          z <- data_list[[z]]
+          ### Apply the condition of removing values which are >< (Mean +- 3 * SD)
+          eyw <- input$ey
+          if(!nrow(data_list)){
+            NULL 
+          } else {
+            data_list[[i]] <- mapply(LLD, x, y, z, eyw)
+          }
+          tseries_df <- left_join(tseries_df, data_list, by = "date")
+        }
+        site1_join_f1 <- tseries_df %>%
+          mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) %>%
+          select(-contains(c("_sd", "_mean")))
+      } else { NULL }  
       site1_join_f1
+      
     }
   })
  
