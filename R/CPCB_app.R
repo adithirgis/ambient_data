@@ -57,19 +57,23 @@ ui <- fluidPage(
                                               tags$hr(),
                                               checkboxInput('repeated', 'Remove consecutive repeated measurements'),
                                               tags$hr(),
+                                              checkboxInput('exclude', 'Cleaning based on Mean and Std Dev'),
+                                              conditionalPanel(
+                                                condition = "input.exclude == true",
+                                                numericInput("ey", "Specify a multiple for removing outliers (Mean + X*Std Dev)",
+                                                             value = 3)
+                                              ),
+                                              tags$hr(),
+                                              checkboxInput('percent', 'Completeness of data in a day'),
+                                              conditionalPanel(
+                                                condition = "input.percent == true",
+                                                numericInput("per", "Specify % of data completeness required in a day - 24 hours",
+                                                             value = 75)
+                                              ),
+                                              tags$hr(),
                                               numericInput("high_number",
                                                            "Remove PM2.5 and PM10 values above",
                                                            value = 999),
-                                              tags$hr(),
-                                              checkboxInput('exclude', 'Cleaning based on Mean and Std Dev'),
-                                              numericInput("ey",
-                                                           "Specify a multiple for removing outliers (Mean + X*Std Dev)",
-                                                           value = 3.0),
-                                              tags$hr(),
-                                              checkboxInput('percent', 'Completeness of data in a day'),
-                                              numericInput("per",
-                                                           "Specify % of data completeness required in a day - 24 hours",
-                                                           value = 75),
                                               tags$hr(),
                                               actionButton("hourly", "HOUR"),
                                               downloadButton('download',"Download as csv"),
@@ -84,6 +88,17 @@ ui <- fluidPage(
                               tabPanel(value = 1,
                                        title = "File",
                                        dataTableOutput("table1")),
+                              tabPanel(
+                                value = 2,
+                                title = "Plots",
+                                plotlyOutput("plot5", width = 800),
+                                plotlyOutput("plot6", width = 800),
+                                plotlyOutput("plot2", width = 800),
+                                plotlyOutput("plot", width = 800),
+                                plotlyOutput("plot4", width = 800),
+                                plotlyOutput("plot3", width = 800),
+                                plotlyOutput("plot7", width = 800)
+                              ),
                               tabPanel(
                                 value = 3,
                                 title = "Summary",
@@ -112,7 +127,8 @@ server <- function(input, output, session) {
       completeVec <- complete.cases(data[, desiredCols])
       return(data[completeVec, ])
     }
-    ### Function to check for Mean+3SD and Mean-3SD; caution needs to have all the columns without NA values
+    ### Function to check for Mean+3SD and Mean-3SD; caution needs to have all 
+    # the columns without NA values
     LLD <- function(x, y, z, ey) {
       if (is.na(x) || is.nan(x) || is.nan(y) || is.na(y) || is.na(z) || is.nan(z)) {
         return (NA)
@@ -181,6 +197,7 @@ server <- function(input, output, session) {
       Beny <- make_df(dt_s$`4`, tseries_df)
       Bent <- make_df(dt_s$`6`, tseries_df)
       all <- list(site1_join, Ben, Beny, Bent) %>% reduce(left_join, by = "date")
+      
       # data_list1 <- subset(data_list1, no_hour >= ((per / 100) * 24))
       if(input$remove_9) {
         col_interest <- 2:ncol(all)
@@ -188,7 +205,7 @@ server <- function(input, output, session) {
                                        FUN = function(x) as.numeric(as.character(x)))
         all[ , col_interest] <- sapply(X = all[ , col_interest], 
                                        FUN = function(x) ifelse(x < 0, NA, x))
-      } else { site1_join_f1 }  
+      } else { all }  
       site1_join_f1 <- all %>%
         mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) %>%
         select(date, day, everything())
