@@ -19,7 +19,7 @@ library(xlsx)
 library(openxlsx)
 
 ui <- fluidPage(
-  h1("Explore CPCB Data"),
+  h1("Analyse CPCB data"),
   tags$head(
     tags$style(HTML(".sidebar {
                     height : 10vh; overflow-y : auto; font-size : 14px;
@@ -50,14 +50,12 @@ ui <- fluidPage(
                              ),
                              conditionalPanel(condition = "input.tabs1 == 1",
                                               tags$hr(),
-                                              helpText("Choose CBCP 1 hour files"),
-                                              tags$hr(),
-                                              helpText("Removes -ve and above 985 values"),
-                                              tags$hr(),
                                               fileInput("file1",
                                                         "CPCB 1 hour data",
                                                         multiple = FALSE,
                                                         accept = c('.xlsx')),
+                                              tags$hr(),
+                                              checkboxInput('remove_9', 'Removes negative values'),
                                               tags$hr(),
                                               h5("Add a multiple for removing outliers (mean + y *(sd))"),
                                               numericInput("e",
