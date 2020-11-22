@@ -55,6 +55,10 @@ ui <- fluidPage(
                                               tags$hr(),
                                               checkboxInput('remove_9', 'Removes negative values'),
                                               tags$hr(),
+                                              numericInput("high_number",
+                                                           "Remove PM2.5 and PM10 values above",
+                                                           value = 999),
+                                              tags$hr(),
                                               h5("Add a multiple for removing outliers (mean + y *(sd))"),
                                               numericInput("e",
                                                            "y * sd",
@@ -184,7 +188,27 @@ server <- function(input, output, session) {
                                        FUN = function(x) as.numeric(as.character(x)))
         all[ , col_interest] <- sapply(X = all[ , col_interest], 
                                        FUN = function(x) ifelse(x < 0, NA, x))
-        } else { NULL }  
+      } else { NULL }  
+      if("PM2.5" %in% colnames(all))
+      {
+        a <- (all$PM2.5) > input$high_number
+        b <- (all$PM10) > input$high_number
+        all$PM2.5 <- ifelse(a, NA, all$PM2.5)
+        all$PM10 <- ifelse(b, NA, all$PM10)
+        ### If PM10 values exist then check the rario of PM2.5 / PM10 and if it is 
+        # greater than 1 then remove those values
+        if("PM10" %in% colnames(all))
+        {
+          all$ratio <- all$PM2.5 / all$PM10
+          all$PM2.5 <- ifelse(all$ratio >= 1, NA, all$PM2.5)
+          all$PM10 <- ifelse(all$ratio >= 1, NA, all$PM10)
+        } else {
+          all$ratio <- NA
+        }
+      }
+      site1_join_f1 <- all %>%
+        mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) %>%
+        select(date, day, everything())
       all
     }
   })
