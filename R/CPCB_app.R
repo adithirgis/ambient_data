@@ -50,10 +50,12 @@ ui <- fluidPage(
                                               tags$hr(),
                                               fileInput("file1",
                                                         "CPCB 1 hour data",
-                                                        multiple = FALSE,
+                                                        multiple = TRUE,
                                                         accept = c('.xlsx')),
                                               tags$hr(),
-                                              checkboxInput('remove_9', 'Removes negative values'),
+                                              checkboxInput('remove_9', 'Remove negative values'),
+                                              tags$hr(),
+                                              checkboxInput('repeated', 'Remove consecutive repeated measurements'),
                                               tags$hr(),
                                               numericInput("high_number",
                                                            "Remove PM2.5 and PM10 values above",
@@ -206,7 +208,21 @@ server <- function(input, output, session) {
           all$ratio <- NA
         }
       } else { NULL }  
-      all
+      site1_join_f1 <- all %>%
+        mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) %>%
+        select(date, day, everything())
+      ### Check for consecutive repeated value and remove them using consecutive 
+      # difference as 0
+      if(input$repeated) {
+        col_interest <- 3:ncol(site1_join_f1)
+        site1_join_f1[ , col_interest] <- sapply(X = site1_join_f1[, col_interest], 
+                                                 FUN = function(j)
+                                                   ifelse(c(FALSE, diff(as.numeric(j), 1, 1) == 0), NA, j))
+        site1_join_f1[ , col_interest] <- sapply(X = site1_join_f1[ , col_interest], 
+                                                 FUN = function(x) 
+                                                   as.numeric(as.character(x)))
+      } else { NULL }  
+      site1_join_f1
     }
   })
  
@@ -217,12 +233,12 @@ server <- function(input, output, session) {
   })
   output$table1 <- DT::renderDataTable({
     data_joined <- data_joined() 
-    cols <- names(data_joined)[2:ncol(data_joined)]
+    cols <- names(data_joined)[3:ncol(data_joined)]
     data_joined[ , cols] <- sapply(X = data_joined[ , cols], 
                                    FUN = function(x) as.numeric(as.character(x)))
     setDT(data_joined)
     data_joined[,(cols) := round(.SD, 2), .SDcols = cols]
-    datatable(data_joined, options = list("pageLength" = 25)) %>% formatDate(1, "toLocaleString")
+    datatable(data_joined, options = list("pageLength" = 25)) %>% formatDate(1, "toLocaleString") 
   })
   
   output$download <- downloadHandler(
