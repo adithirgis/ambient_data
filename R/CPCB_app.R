@@ -63,16 +63,15 @@ ui <- fluidPage(
                                               tags$hr(),
                                               checkboxInput('exclude', 'Cleaning based on Mean and Std Dev'),
                                               numericInput("ey",
-                                                           "Add a multiple for removing outliers (mean + y * (sd))",
+                                                           "Specify a multiple for removing outliers (Mean + X*Std Dev)",
                                                            value = 3.0),
                                               tags$hr(),
-                                              h5("Add % of data completeness required in a day or month"),
+                                              checkboxInput('percent', 'Completeness of data in a day'),
                                               numericInput("per",
-                                                           "percent",
+                                                           "Specify % of data completeness required in a day - 24 hours",
                                                            value = 75),
                                               tags$hr(),
                                               actionButton("hourly", "HOUR"),
-                                              tags$hr(),
                                               downloadButton('download',"Download as csv"),
                                               tags$hr())),
                 mainPanel(
@@ -83,7 +82,7 @@ ui <- fluidPage(
                                } ")),
                   tabsetPanel(id = "tabs1",
                               tabPanel(value = 1,
-                                       title = "Joined File",
+                                       title = "File",
                                        dataTableOutput("table1")),
                               tabPanel(
                                 value = 3,
@@ -128,7 +127,7 @@ server <- function(input, output, session) {
         return (x)
       }
     }
-    per <- input$per
+    per1 <- input$per
     
     if (is.null(input$file1)) {
       return(NULL)
@@ -189,24 +188,7 @@ server <- function(input, output, session) {
                                        FUN = function(x) as.numeric(as.character(x)))
         all[ , col_interest] <- sapply(X = all[ , col_interest], 
                                        FUN = function(x) ifelse(x < 0, NA, x))
-      } else { NULL }  
-      if("PM2.5" %in% colnames(all))
-      {
-        a <- (all$PM2.5) > input$high_number
-        all$PM2.5 <- ifelse(a, NA, all$PM2.5)
-        ### If PM10 values exist then check the rario of PM2.5 / PM10 and if it is 
-        # greater than 1 then remove those values
-        if("PM10" %in% colnames(all))
-        {
-          b <- (all$PM10) > input$high_number
-          all$PM10 <- ifelse(b, NA, all$PM10)
-          all$ratio <- all$PM2.5 / all$PM10
-          all$PM2.5 <- ifelse(all$ratio >= 1, NA, all$PM2.5)
-          all$PM10 <- ifelse(all$ratio >= 1, NA, all$PM10)
-        } else {
-          all$ratio <- NA
-        }
-      } else { NULL }  
+      } else { site1_join_f1 }  
       site1_join_f1 <- all %>%
         mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) %>%
         select(date, day, everything())
@@ -221,10 +203,10 @@ server <- function(input, output, session) {
         site1_join_f1[ , col_interest] <- sapply(X = site1_join_f1[ , col_interest], 
                                                  FUN = function(x) 
                                                    as.numeric(as.character(x)))
-      } else { NULL }  
+      } else { site1_join_f1 }  
+      name <- site1_join_f1 %>%
+        dplyr::select(everything(), -day, -date)
       if(input$exclude) {
-        name <- site1_join_f1 %>%
-          dplyr::select(everything(), -day, -date)
         ### Now calculate the Mean and SD for all parameters to check for some 
         # conditions
         site1_join_f1 <- site1_join_f1 %>%
@@ -232,7 +214,6 @@ server <- function(input, output, session) {
           mutate_all(funs(mean, sd), na.rm = TRUE) %>%
           ungroup() %>%
           select(everything(), -date_mean, -date_sd)
-        fil <- file_name_CPCB()
         for(i in names(name)){
           data_list <- site1_join_f1 %>% 
             dplyr::select(date, - day, starts_with(i))
@@ -265,9 +246,53 @@ server <- function(input, output, session) {
         site1_join_f1 <- tseries_df %>%
           mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) %>%
           select(-contains(c("_sd", "_mean")))
-      } else { NULL }  
+      } else { site1_join_f1 }  
+      if(input$percent) {
+        tseries_df <- data.frame(date)
+        for(i in names(name)){
+          data_list <- site1_join_f1 %>% 
+            dplyr::select(date, day, starts_with(i))
+          ### Check if you have similar names matching eg - NO
+          if(i == "NO") {
+            data_list <- data_list %>%
+              select(-contains(c("NO2", "NOx")))
+          } else {
+            NULL
+          }
+          ### Remove empty rows
+          data_list <- completeFun(data_list, c(i))
+          ### Apply the condition of removing values which are >< (Mean +- 3 * SD)
+          data_list <- data_list %>% 
+            group_by(day) %>%
+            mutate_at(vars(contains(i)), list(no_hour = ~ sum(!is.na(.)))) %>%
+            select(-contains(c("_sd_no_hour", "_mean_no_hour")))
+          old_no <- paste0(i, "_no_hour")
+          names(data_list)[names(data_list) == old_no] <- 'no_hour'
+          data_list <- subset(data_list, no_hour >= ((per1 / 100) * 24))
+          data_list[ , c('day', 'no_hour')] <- list(NULL)
+          tseries_df <- left_join(tseries_df, data_list, by = "date")
+        }
+        site1_join_f1 <- tseries_df %>%
+          mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) 
+      } else { site1_join_f1 }  
+      if("PM2.5" %in% colnames(site1_join_f1))
+      {
+        a <- (site1_join_f1$PM2.5) > input$high_number
+        site1_join_f1$PM2.5 <- ifelse(a, NA, site1_join_f1$PM2.5)
+        ### If PM10 values exist then check the rario of PM2.5 / PM10 and if it is 
+        # greater than 1 then remove those values
+        if("PM10" %in% colnames(site1_join_f1))
+        {
+          b <- (site1_join_f1$PM10) > input$high_number
+          site1_join_f1$PM10 <- ifelse(b, NA, site1_join_f1$PM10)
+          site1_join_f1$ratio <- site1_join_f1$PM2.5 / site1_join_f1$PM10
+          site1_join_f1$PM2.5 <- ifelse(site1_join_f1$ratio >= 1, NA, site1_join_f1$PM2.5)
+          site1_join_f1$PM10 <- ifelse(site1_join_f1$ratio >= 1, NA, site1_join_f1$PM10)
+        } else {
+          site1_join_f1$ratio <- NA
+        }
+      } else { site1_join_f1 }
       site1_join_f1
-      
     }
   })
  
