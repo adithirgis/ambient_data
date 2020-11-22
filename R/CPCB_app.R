@@ -40,8 +40,6 @@ ui <- fluidPage(
                                                           "Select"),
                                               tags$hr()),
                              conditionalPanel(condition = "input.tabs1 == 3",
-                                              tags$hr(),
-                                              h4("Summary Statistics"),
                                               tags$hr()),
                              conditionalPanel(condition = "input.tabs1 == 2",
                                               tags$hr(),
@@ -129,8 +127,7 @@ server <- function(input, output, session) {
     if (is.null(input$file1)) {
       return(NULL)
     } else {
-      trial <- read.xlsx2("D:/Dropbox/ILKConsultancy/ambient_data/data/Bapuji Nagar/site_16320200330134440.xlsx",
-                         1, startRow = 17)
+      trial <- read.xlsx2(input$file1$datapath, 1, startRow = 17)
       trial$date <- gsub(":00", ":00:00", trial$To.Date, fixed = TRUE)
       
       ### This folder contains files with different columns on below other so 
@@ -181,6 +178,13 @@ server <- function(input, output, session) {
       Bent <- make_df(dt_s$`6`, tseries_df)
       all <- list(site1_join, Ben, Beny, Bent) %>% reduce(left_join, by = "date")
       # data_list1 <- subset(data_list1, no_hour >= ((per / 100) * 24))
+      if(input$remove_9) {
+        col_interest <- 2:ncol(all)
+        all[ , col_interest] <- sapply(X = all[ , col_interest], 
+                                       FUN = function(x) as.numeric(as.character(x)))
+        all[ , col_interest] <- sapply(X = all[ , col_interest], 
+                                       FUN = function(x) ifelse(x < 0, NA, x))
+        } else { NULL }  
       all
     }
   })
