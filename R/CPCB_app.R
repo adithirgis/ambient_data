@@ -192,23 +192,20 @@ server <- function(input, output, session) {
       if("PM2.5" %in% colnames(all))
       {
         a <- (all$PM2.5) > input$high_number
-        b <- (all$PM10) > input$high_number
         all$PM2.5 <- ifelse(a, NA, all$PM2.5)
-        all$PM10 <- ifelse(b, NA, all$PM10)
         ### If PM10 values exist then check the rario of PM2.5 / PM10 and if it is 
         # greater than 1 then remove those values
         if("PM10" %in% colnames(all))
         {
+          b <- (all$PM10) > input$high_number
+          all$PM10 <- ifelse(b, NA, all$PM10)
           all$ratio <- all$PM2.5 / all$PM10
           all$PM2.5 <- ifelse(all$ratio >= 1, NA, all$PM2.5)
           all$PM10 <- ifelse(all$ratio >= 1, NA, all$PM10)
         } else {
           all$ratio <- NA
         }
-      }
-      site1_join_f1 <- all %>%
-        mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) %>%
-        select(date, day, everything())
+      } else { NULL }  
       all
     }
   })
