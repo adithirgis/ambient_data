@@ -78,6 +78,13 @@ ui <- fluidPage(
                                                            "Remove PM2.5 and PM10 values above",
                                                            value = 999),
                                               tags$hr(),
+                                              selectInput("avg",
+                                                          label = "Averaging period",
+                                                          c("None" = "no",
+                                                            "Daily" = "daily",
+                                                            "Monthly" = "month"),
+                                                          selected = "None"),
+                                              tags$hr(),
                                               actionButton("hourly", "HOUR"),
                                               downloadButton('download', "Download as csv"),
                                               tags$hr())),
@@ -403,11 +410,11 @@ server <- function(input, output, session) {
       y <- as.numeric(as.character(data[[input$palleInp]]))
       ggplot(data, aes(x = reorder(format(date,'%b %Y'), date), y)) + 
         stat_summary(fun.data = f, colour = "seagreen", geom = "boxplot", 
-                     width = 0.4, size = 1) +  
-        stat_summary(aes(y = y), fun.y = mean, colour = "seagreen", geom = "point", size = 3) +
+                     width = 0.4, size = 1) + 
         labs(y = input$palleInp, x = "") + 
-      theme_minimal() +
-      theme(legend.text = element_text(size = 18),
+        stat_summary(aes(y = y), fun.y = "mean", colour = "seagreen", 
+                     geom = "point", size = 4)  +
+        theme_minimal() + theme(legend.text = element_text(size = 18),
             axis.title = element_text(size = 20, face = "bold"),
             axis.text.y = element_text(size = 18, face = "bold"),
             axis.text.x = element_text(size = 10, face = "bold", angle = 90),
