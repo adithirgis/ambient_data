@@ -7,12 +7,14 @@ library(stringr)
 library(dplyr)
 library(ggplot2)
 library(htmltools)
+library(tidyverse)
+library(leaflet)
+library(XML)
 library(shinyjs)
 library(lubridate)
 library(zoo)
 library(caTools)
 library(xts)
-library(stringr)
 library(readr)
 library(openair)
 library(xlsx)
@@ -34,18 +36,18 @@ ui <- fluidPage(
                                               tags$hr(),
                                               h4("Alarms! Check for any malfunction."),
                                               tags$hr()),
-                             conditionalPanel(condition = "input.tabs1 == 4",
+                             conditionalPanel(condition = "input.tabs1 == 3",
                                               tags$hr(),
-                                              selectInput("palleInp", "Map this pollutant",
+                                              selectInput("palleInp", "Plot this parameter",
                                                           "Select"),
+                                              tags$hr(),
+                                              actionButton("diurnal", "Diurnal Plot"),
+                                              tags$hr(),
+                                              actionButton("ts", "Time Series")),
+                             conditionalPanel(condition = "input.tabs1 == 2",
                                               tags$hr()),
                              conditionalPanel(condition = "input.tabs1 == 3",
                                               tags$hr()),
-                             conditionalPanel(condition = "input.tabs1 == 2",
-                                              tags$hr(),
-                                              h4("Time series plots"),
-                                              tags$hr()
-                             ),
                              conditionalPanel(condition = "input.tabs1 == 1",
                                               tags$hr(),
                                               fileInput("file1",
@@ -61,22 +63,20 @@ ui <- fluidPage(
                                               conditionalPanel(
                                                 condition = "input.exclude == true",
                                                 numericInput("ey", "Specify a multiple for removing outliers (Mean + X*Std Dev)",
-                                                             value = 3)
-                                              ),
+                                                             value = 3)),
                                               tags$hr(),
                                               checkboxInput('percent', 'Completeness of data in a day'),
                                               conditionalPanel(
                                                 condition = "input.percent == true",
                                                 numericInput("per", "Specify % of data completeness required in a day - 24 hours",
-                                                             value = 75)
-                                              ),
+                                                             value = 75)),
                                               tags$hr(),
                                               numericInput("high_number",
                                                            "Remove PM2.5 and PM10 values above",
                                                            value = 999),
                                               tags$hr(),
                                               actionButton("hourly", "HOUR"),
-                                              downloadButton('download',"Download as csv"),
+                                              downloadButton('download', "Download as csv"),
                                               tags$hr())),
                 mainPanel(
                   tags$head(
@@ -90,19 +90,12 @@ ui <- fluidPage(
                                        dataTableOutput("table1")),
                               tabPanel(
                                 value = 2,
-                                title = "Plots",
-                                plotlyOutput("plot5", width = 800),
-                                plotlyOutput("plot6", width = 800),
-                                plotlyOutput("plot2", width = 800),
-                                plotlyOutput("plot", width = 800),
-                                plotlyOutput("plot4", width = 800),
-                                plotlyOutput("plot3", width = 800),
-                                plotlyOutput("plot7", width = 800)
-                              ),
+                                title = "Summary",
+                                dataTableOutput("table")), 
                               tabPanel(
                                 value = 3,
-                                title = "Summary",
-                                dataTableOutput("table")
+                                title = "Plots",
+                                plotlyOutput("plot1", width = 800)
                               )))
   ))
 
@@ -315,8 +308,17 @@ server <- function(input, output, session) {
  
   data_joined <- eventReactive(input$hourly, {
     data <- CPCB_f()
-    name_CPCB <- file_name_CPCB()
     return(data)
+  })
+  observe({
+    if (is.null(input$file1)) {
+      NULL
+    } else {
+      data_joined <- data_joined()
+      data_joined <- data_joined %>%
+        select(- date, - day)
+    }
+    updateSelectInput(session, "palleInp", choices = names(data_joined))
   })
   output$table1 <- DT::renderDataTable({
     data_joined <- data_joined() 
@@ -334,7 +336,27 @@ server <- function(input, output, session) {
       data_joined <- data_joined()
       write.csv(data_joined, fname)
     })
+  theme1 <- reactive({
+    theme1 <- list(geom_line(size = 0.6, color = "dodgerblue2"),
+                   theme_minimal(),
+                   theme(legend.text = element_text(size = 18),
+                         plot.title = element_text(size = 14, face = "bold"),
+                         axis.title = element_text(size = 14),
+                         axis.text = element_text(size = 14, face = "bold"),
+                         panel.border = element_rect(colour = "black",
+                                                     fill = NA, size = 1.2)))
+  })
   
+  output$plot1 <- renderPlotly({
+   if (is.null(CPCB_f())) { NULL }
+   else {
+      data <- CPCB_f()
+      data[[input$palleInp]] <- as.numeric(as.character(data[[input$palleInp]]))
+      ggplotly(ggplot(data, aes(as.POSIXct(date), input$palleInp)) +
+                 labs(y = "",
+                      x = "") + theme1()
+      )}
+  })
   output$table <- DT::renderDataTable({
     data <- data_joined()
     data <- data %>%
