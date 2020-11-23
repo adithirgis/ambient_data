@@ -95,7 +95,8 @@ ui <- fluidPage(
                               tabPanel(
                                 value = 3,
                                 title = "Plots",
-                                plotlyOutput("plot1", width = 800)
+                                plotOutput("plot1", width = 800),
+                                plotOutput("plot2", width = 800)
                               )))
   ))
 
@@ -310,6 +311,14 @@ server <- function(input, output, session) {
     data <- CPCB_f()
     return(data)
   })
+  data_plot <- eventReactive(input$ts, {
+    data <- CPCB_f()
+    return(data)
+  })
+  data_diurnal <- eventReactive(input$diurnal, {
+    data <- CPCB_f()
+    return(data)
+  })
   observe({
     if (is.null(input$file1)) {
       NULL
@@ -341,50 +350,70 @@ server <- function(input, output, session) {
                    theme_minimal(),
                    theme(legend.text = element_text(size = 18),
                          plot.title = element_text(size = 14, face = "bold"),
-                         axis.title = element_text(size = 14),
-                         axis.text = element_text(size = 14, face = "bold"),
+                         axis.title = element_text(size = 20, face = "bold"),
+                         axis.text = element_text(size = 18, face = "bold"),
                          panel.border = element_rect(colour = "black",
                                                      fill = NA, size = 1.2)))
   })
   
-  output$plot1 <- renderPlotly({
-   if (is.null(CPCB_f())) { NULL }
+  output$plot1 <- renderPlot({
+   if (is.null(input$file1)) { NULL }
    else {
-      data <- CPCB_f()
-      data[[input$palleInp]] <- as.numeric(as.character(data[[input$palleInp]]))
-      ggplotly(ggplot(data, aes(as.POSIXct(date), input$palleInp)) +
-                 labs(y = "",
-                      x = "") + theme1()
-      )}
+      data <- data_plot()
+      y <- as.numeric(as.character(data[[input$palleInp]]))
+      ggplot(data, aes(as.POSIXct(date), y)) +
+        labs(y = input$palleInp,
+             x = "") + theme1()
+      }
+  })
+  output$plot2 <- renderPlot({
+    if (is.null(input$file1)) { NULL }
+    else {
+      data <- data_diurnal()
+      data <- data %>%
+        mutate(hour = format(date, "%H")) 
+      data <- data %>%
+        dplyr::select(hour, "y" = input$palleInp) 
+      data <- data %>%
+        group_by(hour) %>%
+        summarise(x = mean(y, na.rm = TRUE))
+      data$hour <- as.numeric(as.character(data$hour))
+      ggplot(data, aes(hour, x)) + scale_x_continuous(limits = c(0, 24), breaks = 
+                                                        c(0, 6, 12, 18)) +
+        labs(y = input$palleInp,
+             x = "", y = "hour of the day") + theme1()
+    }
   })
   output$table <- DT::renderDataTable({
     data <- data_joined()
     data <- data %>%
-      select(everything(), - date)
+      select(everything(), - date, - day)
     columns <- 1:ncol(data)
     data[, columns] <- lapply(columns, function(x) as.numeric(as.character(data[[x]])))
     tmp1 <- do.call(data.frame,
-                    list(Mean = apply(data, 2, mean, na.rm = TRUE),
-                         SD = apply(data, 2, sd, na.rm = TRUE),
-                         Median = apply(data, 2, median, na.rm = TRUE),
-                         IQR = apply(data, 2, IQR, na.rm = TRUE),
-                         Min = apply(data, 2, min, na.rm = TRUE),
-                         Max = apply(data, 2, max, na.rm = TRUE),
-                         p1  = apply(data, 2, quantile, probs = c(0.01),
-                                     na.rm = TRUE),
-                         p10 = apply(data, 2, quantile, probs = c(0.1),
-                                     na.rm = TRUE),
-                         p25 = apply(data, 2, quantile, probs = c(0.25),
-                                     na.rm = TRUE),
-                         p75 = apply(data, 2, quantile, probs = c(0.75),
-                                     na.rm = TRUE),
-                         p90 = apply(data, 2, quantile, probs = c(0.9),
-                                     na.rm = TRUE),
-                         p99 = apply(data, 2, quantile, probs = c(0.99),
-                                     na.rm = TRUE),
-                         Total_non_NA = apply(data, 2,
-                                              function(x)
-                                              {length(which(!is.na(x)))})))
+                    list(Mean = apply(data, 2, function(y)
+                    {mean(y, na.rm = TRUE)}),
+                    SD = apply(data, 2, function(y)
+                    {sd(y, na.rm = TRUE)}),
+                    Median = apply(data, 2, median, na.rm = TRUE),
+                    IQR = apply(data, 2, IQR, na.rm = TRUE),
+                    Min = apply(data, 2, min, na.rm = TRUE),
+                    Max = apply(data, 2, max, na.rm = TRUE),
+                    p1  = apply(data, 2, quantile, probs = c(0.01),
+                                na.rm = TRUE),
+                    p10 = apply(data, 2, quantile, probs = c(0.1),
+                                na.rm = TRUE),
+                    p25 = apply(data, 2, quantile, probs = c(0.25),
+                                na.rm = TRUE),
+                    p75 = apply(data, 2, quantile, probs = c(0.75),
+                                na.rm = TRUE),
+                    p90 = apply(data, 2, quantile, probs = c(0.9),
+                                na.rm = TRUE),
+                    p99 = apply(data, 2, quantile, probs = c(0.99),
+                                na.rm = TRUE),
+                    Total_non_NA = apply(data, 2,
+                                         function(y)
+                                         {length(which(!is.na(y)))})))
     tmp <- data.frame(tmp1)
     tmp$Mean   <- round(as.numeric(as.character(tmp$Mean)), digits = 2)
     tmp$IQR    <- round(as.numeric(as.character(tmp$IQR)), digits = 2)
