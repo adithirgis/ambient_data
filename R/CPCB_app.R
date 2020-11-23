@@ -41,9 +41,12 @@ ui <- fluidPage(
                                               selectInput("palleInp", "Plot this parameter",
                                                           "Select"),
                                               tags$hr(),
+                                              actionButton("ts", "Time Series"),
+                                              tags$hr(),
                                               actionButton("diurnal", "Diurnal Plot"),
                                               tags$hr(),
-                                              actionButton("ts", "Time Series")),
+                                              actionButton("box", "Monthly Box Plot"),
+                                              tags$hr()),
                              conditionalPanel(condition = "input.tabs1 == 2",
                                               tags$hr()),
                              conditionalPanel(condition = "input.tabs1 == 3",
@@ -96,7 +99,8 @@ ui <- fluidPage(
                                 value = 3,
                                 title = "Plots",
                                 plotOutput("plot1", width = 800),
-                                plotOutput("plot2", width = 800)
+                                plotOutput("plot2", width = 800),
+                                plotOutput("plot3", width = 800)
                               )))
   ))
 
@@ -319,6 +323,10 @@ server <- function(input, output, session) {
     data <- CPCB_f()
     return(data)
   })
+  data_box <- eventReactive(input$box, {
+    data <- CPCB_f()
+    return(data)
+  })
   observe({
     if (is.null(input$file1)) {
       NULL
@@ -346,7 +354,7 @@ server <- function(input, output, session) {
       write.csv(data_joined, fname)
     })
   theme1 <- reactive({
-    theme1 <- list(geom_line(size = 0.6, color = "dodgerblue2"),
+    theme1 <- list(geom_line(size = 0.6, color = "seagreen"),
                    theme_minimal(),
                    theme(legend.text = element_text(size = 18),
                          plot.title = element_text(size = 14, face = "bold"),
@@ -380,8 +388,31 @@ server <- function(input, output, session) {
       data$hour <- as.numeric(as.character(data$hour))
       ggplot(data, aes(hour, x)) + scale_x_continuous(limits = c(0, 24), breaks = 
                                                         c(0, 6, 12, 18)) +
-        labs(y = input$palleInp,
-             x = "", y = "hour of the day") + theme1()
+        labs(y = input$palleInp, x = "hour of the day") + theme1()
+    }
+  })
+  output$plot3 <- renderPlot({
+    if (is.null(input$file1)) { NULL }
+    else {
+      data <- data_box()
+      f <- function(x) {
+        r <- quantile(x, probs = c(0.05, 0.25, 0.5, 0.75, 0.95))
+        names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
+        r
+      }
+      y <- as.numeric(as.character(data[[input$palleInp]]))
+      ggplot(data, aes(x = reorder(format(date,'%b %Y'), date), y)) + 
+        stat_summary(fun.data = f, colour = "seagreen", geom = "boxplot", 
+                     width = 0.4, size = 1) +  
+        stat_summary(aes(y = y), fun.y = mean, colour = "seagreen", geom = "point", size = 3) +
+        labs(y = input$palleInp, x = "") + 
+      theme_minimal() +
+      theme(legend.text = element_text(size = 18),
+            axis.title = element_text(size = 20, face = "bold"),
+            axis.text.y = element_text(size = 18, face = "bold"),
+            axis.text.x = element_text(size = 10, face = "bold", angle = 90),
+            panel.border = element_rect(colour = "black",
+                                        fill = NA, size = 1.2))
     }
   })
   output$table <- DT::renderDataTable({
