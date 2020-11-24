@@ -52,7 +52,7 @@ ui <- fluidPage(
                                               selectInput("avg",
                                                           label = "Averaging period",
                                                           c("None" = "no",
-                                                            "Daily" = "daily",
+                                                            "Daily" = "day",
                                                             "Monthly" = "month"),
                                                           selected = "None"),
                                               tags$hr()),
@@ -297,6 +297,7 @@ server <- function(input, output, session) {
         site1_join_f1 <- tseries_df %>%
           mutate(day = as.Date(date, format = '%Y-%m-%d', tz = "Asia/Kolkata")) 
       } else { site1_join_f1 }  
+      ### PM2.5 and PM10 ratio
       if("PM2.5" %in% colnames(site1_join_f1))
       {
         a <- (site1_join_f1$PM2.5) > input$high_number
@@ -391,10 +392,11 @@ server <- function(input, output, session) {
         dplyr::select(hour, "y" = input$palleInp) 
       data <- data %>%
         group_by(hour) %>%
-        summarise(x = mean(y, na.rm = TRUE))
+        summarise_all(funs(mean, sd), na.rm = TRUE)
       data$hour <- as.numeric(as.character(data$hour))
-      ggplot(data, aes(hour, x)) + scale_x_continuous(limits = c(0, 24), breaks = 
-                                                        c(0, 6, 12, 18)) +
+      ggplot(data, aes(hour, mean)) + geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd), 
+                                                    color = "seagreen") + 
+        scale_x_continuous(limits = c(-1, 24), breaks = c(0, 6, 12, 18)) +
         labs(y = input$palleInp, x = "hour of the day") + theme1()
     }
   })
@@ -424,9 +426,11 @@ server <- function(input, output, session) {
   })
   output$table <- DT::renderDataTable({
     data <- data_joined()
+    data <- data %>%
+      select(everything(), - date)
     if(input$avg == "no") {
       data <- data %>%
-        select(everything(), - date, - day)
+        select(everything(), - day)
       columns <- 1:ncol(data)
       data[, columns] <- lapply(columns, function(x) as.numeric(as.character(data[[x]])))
       tmp1 <- do.call(data.frame,
@@ -450,7 +454,7 @@ server <- function(input, output, session) {
                                   na.rm = TRUE),
                       p99 = apply(data, 2, quantile, probs = c(0.99),
                                   na.rm = TRUE),
-                      Total_non_NA = apply(data, 2,
+                      non_NA = apply(data, 2,
                                            function(y)
                                            {length(which(!is.na(y)))})))
       tmp <- data.frame(tmp1)
@@ -468,37 +472,23 @@ server <- function(input, output, session) {
       tmp$p25    <- round(as.numeric(as.character(tmp$p25)), digits = 2)
       tmp
       tmp <- t(tmp)
-    } else if(input$avg == "daily") {
-      data <- data %>%
-        select(everything(), - date)
-      data <- data %>%
-        group_by(day) %>%
-        summarise_all(funs(Mean = mean, SD = sd, Median = median, IQR = IQR, 
-                           Min = min, Max = max,   
-                           p1 = quantile(., .01), p10 = quantile(., .1), 
-                           p25 = quantile(., .25), p75 = quantile(., .75), 
-                           p90 = quantile(., .9), p99 = quantile(., .99),
-                           Total_non_NA = sum(!is.na(.))), na.rm = TRUE)
-      columns <- 2:ncol(data)
-      data[, columns] <- lapply(columns, function(x) round(as.numeric(as.character(data[[x]])), digits = 2))
-      tmp <- data
     } else {
       data <- data %>%
-        select(everything(), - date) %>%
-        mutate(month  = format(day, "%b %Y"))
+        mutate(month  = format(day, "%b %Y")) %>%
+        select(day, month, everything())
+      data$group <- data[[input$avg]]
       data <- data %>%
-        select(everything(), - day) %>%
-        group_by(month) %>%
-        summarise_all(funs(Mean = mean, SD = sd, Median = median, IQR = IQR, 
+        group_by(group) %>%
+        summarise_if(is.numeric, funs(Mean = mean, SD = sd, Median = median, IQR = IQR, 
                            Min = min, Max = max,   
                            p1 = quantile(., .01), p10 = quantile(., .1), 
                            p25 = quantile(., .25), p75 = quantile(., .75), 
                            p90 = quantile(., .9), p99 = quantile(., .99),
-                           Total_non_NA = sum(!is.na(.))), na.rm = TRUE)
+                           non_NA = sum(!is.na(.))), na.rm = TRUE)
       columns <- 2:ncol(data)
       data[, columns] <- lapply(columns, function(x) round(as.numeric(as.character(data[[x]])), digits = 2))
       tmp <- data
-    }
+    } 
     
     datatable(tmp, options = list("pageLength" = 13))
   })
@@ -510,10 +500,4 @@ shinyApp(ui, server)
 
 
 
-
-# selectInput("avg",
-# label = "Averaging period",
-# c("None" = "no",
-#   "Daily" = "daily",
-#   "Monthly" = "month"),
 
