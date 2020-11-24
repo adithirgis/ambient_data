@@ -48,13 +48,20 @@ ui <- fluidPage(
                                               actionButton("box", "Monthly Box Plot"),
                                               tags$hr()),
                              conditionalPanel(condition = "input.tabs1 == 2",
+                                              tags$hr(),
+                                              selectInput("avg",
+                                                          label = "Averaging period",
+                                                          c("None" = "no",
+                                                            "Daily" = "daily",
+                                                            "Monthly" = "month"),
+                                                          selected = "None"),
                                               tags$hr()),
                              conditionalPanel(condition = "input.tabs1 == 3",
                                               tags$hr()),
                              conditionalPanel(condition = "input.tabs1 == 1",
                                               tags$hr(),
                                               fileInput("file1",
-                                                        "CPCB hourly data",
+                                                        "Add data",
                                                         multiple = TRUE,
                                                         accept = c('.xlsx')),
                                               tags$hr(),
@@ -76,16 +83,9 @@ ui <- fluidPage(
                                               tags$hr(),
                                               numericInput("high_number",
                                                            "Remove PM2.5 and PM10 values above",
-                                                           value = 999),
+                                                           value = 9999),
                                               tags$hr(),
-                                              selectInput("avg",
-                                                          label = "Averaging period",
-                                                          c("None" = "no",
-                                                            "Daily" = "daily",
-                                                            "Monthly" = "month"),
-                                                          selected = "None"),
-                                              tags$hr(),
-                                              actionButton("hourly", "HOUR"),
+                                              actionButton("hourly", "Show Data"),
                                               downloadButton('download', "Download as csv"),
                                               tags$hr())),
                 mainPanel(
@@ -424,51 +424,86 @@ server <- function(input, output, session) {
   })
   output$table <- DT::renderDataTable({
     data <- data_joined()
-    data <- data %>%
-      select(everything(), - date, - day)
-    columns <- 1:ncol(data)
-    data[, columns] <- lapply(columns, function(x) as.numeric(as.character(data[[x]])))
-    tmp1 <- do.call(data.frame,
-                    list(Mean = apply(data, 2, function(y)
-                    {mean(y, na.rm = TRUE)}),
-                    SD = apply(data, 2, function(y)
-                    {sd(y, na.rm = TRUE)}),
-                    Median = apply(data, 2, median, na.rm = TRUE),
-                    IQR = apply(data, 2, IQR, na.rm = TRUE),
-                    Min = apply(data, 2, min, na.rm = TRUE),
-                    Max = apply(data, 2, max, na.rm = TRUE),
-                    p1  = apply(data, 2, quantile, probs = c(0.01),
-                                na.rm = TRUE),
-                    p10 = apply(data, 2, quantile, probs = c(0.1),
-                                na.rm = TRUE),
-                    p25 = apply(data, 2, quantile, probs = c(0.25),
-                                na.rm = TRUE),
-                    p75 = apply(data, 2, quantile, probs = c(0.75),
-                                na.rm = TRUE),
-                    p90 = apply(data, 2, quantile, probs = c(0.9),
-                                na.rm = TRUE),
-                    p99 = apply(data, 2, quantile, probs = c(0.99),
-                                na.rm = TRUE),
-                    Total_non_NA = apply(data, 2,
-                                         function(y)
-                                         {length(which(!is.na(y)))})))
-    tmp <- data.frame(tmp1)
-    tmp$Mean   <- round(as.numeric(as.character(tmp$Mean)), digits = 2)
-    tmp$IQR    <- round(as.numeric(as.character(tmp$IQR)), digits = 2)
-    tmp$Median <- round(as.numeric(as.character(tmp$Median)), digits = 2)
-    tmp$Min    <- round(as.numeric(as.character(tmp$Min)), digits = 2)
-    tmp$Max    <- round(as.numeric(as.character(tmp$Max)), digits = 2)
-    tmp$p10    <- round(as.numeric(as.character(tmp$p10)), digits = 2)
-    tmp$SD     <- round(as.numeric(as.character(tmp$SD)), digits = 2)
-    tmp$p90    <- round(as.numeric(as.character(tmp$p90)), digits = 2)
-    tmp$p75    <- round(as.numeric(as.character(tmp$p75)), digits = 2)
-    tmp$p99    <- round(as.numeric(as.character(tmp$p99)), digits = 2)
-    tmp$p1     <- round(as.numeric(as.character(tmp$p1)), digits = 2)
-    tmp$p25    <- round(as.numeric(as.character(tmp$p25)), digits = 2)
-    tmp
-    tmp <- t(tmp)
+    if(input$avg == "no") {
+      data <- data %>%
+        select(everything(), - date, - day)
+      columns <- 1:ncol(data)
+      data[, columns] <- lapply(columns, function(x) as.numeric(as.character(data[[x]])))
+      tmp1 <- do.call(data.frame,
+                      list(Mean = apply(data, 2, function(y)
+                      {mean(y, na.rm = TRUE)}),
+                      SD = apply(data, 2, function(y)
+                      {sd(y, na.rm = TRUE)}),
+                      Median = apply(data, 2, median, na.rm = TRUE),
+                      IQR = apply(data, 2, IQR, na.rm = TRUE),
+                      Min = apply(data, 2, min, na.rm = TRUE),
+                      Max = apply(data, 2, max, na.rm = TRUE),
+                      p1  = apply(data, 2, quantile, probs = c(0.01),
+                                  na.rm = TRUE),
+                      p10 = apply(data, 2, quantile, probs = c(0.1),
+                                  na.rm = TRUE),
+                      p25 = apply(data, 2, quantile, probs = c(0.25),
+                                  na.rm = TRUE),
+                      p75 = apply(data, 2, quantile, probs = c(0.75),
+                                  na.rm = TRUE),
+                      p90 = apply(data, 2, quantile, probs = c(0.9),
+                                  na.rm = TRUE),
+                      p99 = apply(data, 2, quantile, probs = c(0.99),
+                                  na.rm = TRUE),
+                      Total_non_NA = apply(data, 2,
+                                           function(y)
+                                           {length(which(!is.na(y)))})))
+      tmp <- data.frame(tmp1)
+      tmp$Mean   <- round(as.numeric(as.character(tmp$Mean)), digits = 2)
+      tmp$IQR    <- round(as.numeric(as.character(tmp$IQR)), digits = 2)
+      tmp$Median <- round(as.numeric(as.character(tmp$Median)), digits = 2)
+      tmp$Min    <- round(as.numeric(as.character(tmp$Min)), digits = 2)
+      tmp$Max    <- round(as.numeric(as.character(tmp$Max)), digits = 2)
+      tmp$p10    <- round(as.numeric(as.character(tmp$p10)), digits = 2)
+      tmp$SD     <- round(as.numeric(as.character(tmp$SD)), digits = 2)
+      tmp$p90    <- round(as.numeric(as.character(tmp$p90)), digits = 2)
+      tmp$p75    <- round(as.numeric(as.character(tmp$p75)), digits = 2)
+      tmp$p99    <- round(as.numeric(as.character(tmp$p99)), digits = 2)
+      tmp$p1     <- round(as.numeric(as.character(tmp$p1)), digits = 2)
+      tmp$p25    <- round(as.numeric(as.character(tmp$p25)), digits = 2)
+      tmp
+      tmp <- t(tmp)
+    } else if(input$avg == "daily") {
+      data <- data %>%
+        select(everything(), - date)
+      data <- data %>%
+        group_by(day) %>%
+        summarise_all(funs(Mean = mean, SD = sd, Median = median, IQR = IQR, 
+                           Min = min, Max = max,   
+                           p1 = quantile(., .01), p10 = quantile(., .1), 
+                           p25 = quantile(., .25), p75 = quantile(., .75), 
+                           p90 = quantile(., .9), p99 = quantile(., .99),
+                           Total_non_NA = sum(!is.na(.))), na.rm = TRUE)
+      columns <- 2:ncol(data)
+      data[, columns] <- lapply(columns, function(x) round(as.numeric(as.character(data[[x]])), digits = 2))
+      tmp <- data
+    } else {
+      data <- data %>%
+        select(everything(), - date) %>%
+        mutate(month  = format(day, "%b %Y"))
+      data <- data %>%
+        select(everything(), - day) %>%
+        group_by(month) %>%
+        summarise_all(funs(Mean = mean, SD = sd, Median = median, IQR = IQR, 
+                           Min = min, Max = max,   
+                           p1 = quantile(., .01), p10 = quantile(., .1), 
+                           p25 = quantile(., .25), p75 = quantile(., .75), 
+                           p90 = quantile(., .9), p99 = quantile(., .99),
+                           Total_non_NA = sum(!is.na(.))), na.rm = TRUE)
+      columns <- 2:ncol(data)
+      data[, columns] <- lapply(columns, function(x) round(as.numeric(as.character(data[[x]])), digits = 2))
+      tmp <- data
+    }
+    
     datatable(tmp, options = list("pageLength" = 13))
   })
+  
+  
 }
 ## Run app
 shinyApp(ui, server)
@@ -476,5 +511,9 @@ shinyApp(ui, server)
 
 
 
-
+# selectInput("avg",
+# label = "Averaging period",
+# c("None" = "no",
+#   "Daily" = "daily",
+#   "Monthly" = "month"),
 
