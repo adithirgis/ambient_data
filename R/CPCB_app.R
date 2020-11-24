@@ -511,6 +511,6 @@ shinyApp(ui, server)
 # checkboxInput('percent', 'Completeness of data in a day'),
 # conditionalPanel(
 #   condition = "input.percent == true",
-#   numericInput("per", "Specify % of data completeness required in a day - 24 hours",
+#   numericInput("per", "Specify % of data completeness required",
 #                value = 75)))
 
