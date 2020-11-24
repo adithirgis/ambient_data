@@ -21,7 +21,7 @@ library(xlsx)
 library(openxlsx)
 
 ui <- fluidPage(
-  h1("Analyse CPCB data"),
+  h1("Analyse high resolution CPCB data"),
   tags$head(
     tags$style(HTML(".sidebar {
                     height : 10vh; overflow-y : auto; font-size : 14px;
@@ -32,10 +32,6 @@ ui <- fluidPage(
     ))),
   sidebarLayout(position = "left",
                 sidebarPanel(width = 3,
-                             conditionalPanel(condition = "input.tabs1 == 6",
-                                              tags$hr(),
-                                              h4("Alarms! Check for any malfunction."),
-                                              tags$hr()),
                              conditionalPanel(condition = "input.tabs1 == 3",
                                               tags$hr(),
                                               selectInput("palleInp", "Plot this parameter",
@@ -60,8 +56,13 @@ ui <- fluidPage(
                                               tags$hr()),
                              conditionalPanel(condition = "input.tabs1 == 1",
                                               tags$hr(),
+                                              radioButtons("file", "Time resolution",
+                                                           c("15 minutes" = "15 min",
+                                                             "30 minutes" = "30 min",
+                                                             "60 minutes" = "60 min")),
+                                              tags$hr(),
                                               fileInput("file1",
-                                                        "Add data",
+                                                        "Add high resolution data",
                                                         multiple = TRUE,
                                                         accept = c('.xlsx')),
                                               tags$hr(),
@@ -175,7 +176,7 @@ server <- function(input, output, session) {
       date <- seq(
         from = as.POSIXct(x1, tz = "Asia/Kolkata"),
         to = as.POSIXct(x2, tz = "Asia/Kolkata"),
-        by = "60 min"
+        by = input$file
       ) 
       tseries_df <- data.frame(date)
       
@@ -290,7 +291,14 @@ server <- function(input, output, session) {
             select(-contains(c("_sd_no_hour", "_mean_no_hour")))
           old_no <- paste0(i, "_no_hour")
           names(data_list)[names(data_list) == old_no] <- 'no_hour'
-          data_list <- subset(data_list, no_hour >= ((per1 / 100) * 24))
+          if(input$file == "15 min") {
+            time_avg = 96
+          } else if(input$file == "30 min") {
+            time_avg = 48
+          } else {
+            time_avg = 24
+          }
+          data_list <- subset(data_list, no_hour >= ((per1 / 100) * time_avg))
           data_list[ , c('day', 'no_hour')] <- list(NULL)
           tseries_df <- left_join(tseries_df, data_list, by = "date")
         }
@@ -499,5 +507,10 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 
 
-
+# conditionalPanel(condition = "input.file == 'min'",
+# checkboxInput('percent', 'Completeness of data in a day'),
+# conditionalPanel(
+#   condition = "input.percent == true",
+#   numericInput("per", "Specify % of data completeness required in a day - 24 hours",
+#                value = 75)))
 
